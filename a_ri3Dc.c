@@ -82,6 +82,10 @@ static char *SRCID_a_ri3Dc_c = "$Id$";
 #define RAD_BA_NR   0
 #define RAD_BA_STEP 1
 
+#define OCCUPIED_MIN 0       /* occupancy must be greater than this to
+                                  be counted as occupied for volume
+                                  calculations */
+
 void update_tgrid (t_tgrid *);
 void tgrid2cavity (t_tgrid *, t_cavity *);
 static gmx_inline bool bInCircle(real,real,real,real,real);
@@ -262,7 +266,12 @@ int main(int argc,char *argv[])
     "axial distribution function (zdf):\n"
     "               P(z) = 1/Lx 1/Ly Int dx dy n(x,y,z)\n"
     "P(r) and P(z) are actually averaged densities (normalisation is straightforward"
-    "to turn them into 'real' probability distributions)."
+    "to turn them into 'real' probability distributions).\n"
+    "The local density axial distribution function -lzdf averages over all  "
+    "occupied grid cells per z-slice and divides by an effective area which is determined "
+    "from the 'radius of gyration' of the density. The radius is a good approximation to the "
+    "pore profile (MUCH better than -profile) and output as 1:3 in lzdf. The density itself "
+    "is 1:2 in the lzdf.xvg file. "
     "[PAR]For diagnostic purposes one can also plot the radial distributions of "
     "the unoccupied cells (holes in the grid) in order to find suitable grid "
     "spacings.\n"
@@ -279,7 +288,9 @@ int main(int argc,char *argv[])
     "In any case one should never have different bin widths in X and Y.",
     "There are still a few hidden options of questionable usefulness. "
     "Resampling (=changing Delta) is not implemented yet.",
-    "gOpenMol plt binary file comes out with wrong suffix"
+    "gOpenMol plt binary file comes out with wrong suffix",
+    "-profile should be removed, it's crap. local density is better.",
+    "note: -minocc also influences -lzdf"
   };
 
   static t_cavity geometry = {   /* describes the cylinder */
@@ -321,7 +332,9 @@ int main(int argc,char *argv[])
       "HIDDENSpatial resolution in X, Y, and Z for resampling (in nm)"},
     { "-minocc",   FALSE, etREAL, {&min_occ},
       "HIDDENThe occupancy of a  cell must be larger than this number so that it is "
-      "counted as occupied when calculating the volume and effective radius"},
+      "counted as occupied when calculating the volume, effective radius "
+      "and local density axial distribution -lzdf. This is given in the chosen "
+      "units (see -unit)."},
     { "-subtitle", FALSE, etSTR, {&header},
       "Some text to add to the output graphs"},
     { "-mirror", FALSE, etBOOL, {&bMirror},
@@ -352,6 +365,7 @@ int main(int argc,char *argv[])
     { efDAT, "-rzp",  "rzp",  ffWRITE },
     { efXVG, "-rdf",  "rdf",  ffWRITE },
     { efXVG, "-zdf",  "zdf",  ffWRITE },
+    { efXVG, "-lzdf", "lzdf", ffWRITE },
     { efDAT, "-hxyp", "hxyp", ffOPTWR },
     { efDAT, "-hrzp", "hrzp", ffOPTWR },
     { efXVG, "-hrdf", "hrdf", ffOPTWR },
@@ -373,13 +387,16 @@ int main(int argc,char *argv[])
   real       **hrzp=NULL;   /* distribution of unoccupied cells */
   double     sumP,sumH;     /* Sum_xyz P(x,y,z); sumH is over
                                unoccupied cells */
-  real       **rdf=NULL;          /* P(r) */
-  real       **zdf=NULL;          /* P(z) */  				
+  real       **rdf=NULL;          /* n(r) */
+  real       **zdf=NULL;          /* n(z) */  		
+  real       **lzdf=NULL;         /* n(z), but from occupied cells only */
   real       **hrdf=NULL;
 
   enum eDensUnit nunit = eduUNITY;       /* how to measure the density */
 
   int i,j,k;
+  int nocc;         /* number of occupied (> min_occ) cells */
+  real Agyr;        /* 'radius of gyration' for occupied cells */
   double dV;        /* volume of a cell */
   real height;      /* z2 - z1 */
   real volume = 0;
@@ -438,6 +455,8 @@ int main(int argc,char *argv[])
     nunit = eduUNITY;
   } /*end switch */
 
+  min_occ *= DensUnit[nunit]; /* compare filling of cell in chosen unit */
+
   if(!opt2parg_bSet("-xfarbe-maxlevel",NPA,pa)) {
     maxDensity /= DensUnit[nunit];
     dmsg("Converted the default xfarbe-maxlevel: %f %s\n",
@@ -476,12 +495,13 @@ int main(int argc,char *argv[])
     fatal_error (-1,"FAILED: allocating memory for the projection maps\n");
 
   /* setup zdf */
-  if (!(zdf=grid2_alloc(tgrid.mx[ZZ],2)))
+  if (! (zdf=grid2_alloc(tgrid.mx[ZZ],2)) ||
+      !(lzdf=grid2_alloc(tgrid.mx[ZZ],3)))
     fatal_error (-1,"FAILED: allocating memory for the axial "
-		 "distribution function\n");
+		 "distribution functions\n");
 
   /* setup radial distributions (rdf and rzprojection)   */
-  iradNR = (int)floor(geometry.radius/DeltaR)+1;
+  iradNR = (int)floor(geometry.radius/DeltaR);
   snew(rweight,iradNR);
   if (!rweight || !(rdf=grid2_alloc(iradNR,2)))
     fatal_error (-1,"FAILED: allocating memory for the radial "
@@ -521,6 +541,8 @@ int main(int argc,char *argv[])
          1/L Integral_L dx f(x) = 1/n_x Sum_i        f_i
   */
   for(k=0;k<tgrid.mx[ZZ];k++) {
+    nocc=0;      /* number of occupied cells in this xy layer */
+    Agyr=0;      /* radius of gyration for occupied cells */
     for(j=0;j<tgrid.mx[YY];j++) {
       for(i=0;i<tgrid.mx[XX];i++) {
 	/* projections on planes */
@@ -533,6 +555,14 @@ int main(int argc,char *argv[])
 	if (tgrid.grid[i][j][k] <= min_occ) 
 	  hxyp[i][j] += 1.0/((real)tgrid.mx[ZZ] * DensUnit[eduUNITY]);
 
+	/* translate to coordinates centered on the axis and
+	   pointing to the center of the cell 
+           These are also needed for radial binning:
+        */
+	ci = ((real)i+0.5) - (real)tgrid.mx[XX]/2.0;
+	cj = ((real)j+0.5) - (real)tgrid.mx[YY]/2.0;
+
+
 	/* pore profile from volumes of z-slices 
 	   This is inexact if dV is so small that there are lots of
 	   unoccupied cells (holes) in the inner region. Use the hole
@@ -543,17 +573,32 @@ int main(int argc,char *argv[])
 		      (real)tgrid.mx[XX]/2.0, (real)tgrid.mx[YY]/2.0, 
 		      geometry.radius/DeltaR))  {
 	  /* multiply by dV later */
-	  volume++;
+	  volume++;        /* total number of occupied cells */
 	  profile[k][1]++;
+
+          /* local density axial distribution function
+             the area is estimated as the 'radius of gyration' of the occupied 
+             cells 
+
+             Rgyr = sqrt( Sum_i,occ n(i,z)*r(i,z)^2 / Sum_i,occ n(i,z)  )
+             where r(i,z) is the distance from the center of the pore
+             Agyr = pi * Rgyr^2
+           
+             units of DeltaR for radius
+          */
+        
+          /* occupied cells per k-slice (though Agyr could equally
+             calculated from ALL cells; empty grid cells don't have
+             any weight in the sum)
+          */
+          nocc++;          /* not used, just for debugging or future use */
+          lzdf[k][1] += tgrid.grid[i][j][k]; 
+          Agyr += tgrid.grid[i][j][k] * (ci*ci + cj*cj);
 	}
+
 
 	/* radial distributions */
 
-	/* translate to coordinates centered on the axis and
-	   pointing to the center of the cell 
-        */
-	ci = ((real)i+0.5) - (real)tgrid.mx[XX]/2.0;
-	cj = ((real)j+0.5) - (real)tgrid.mx[YY]/2.0;
 
 	/* radius in units DeltaR (really:
 	   sqrt((i*DX)^2+(j*DY)^2)/DeltaR but with the fixed setting
@@ -584,11 +629,19 @@ int main(int argc,char *argv[])
 	    hrzp[irad][k]++; 
 	  }
 	}
-	/* axial distribution function zdf (normalise later) 
-           Note: this integrates square disks out and collapses them onto 
-                 the z-axis, NOT circles. (should be fixed) 
+	/* axial distribution function zdf (normalise later) Note:
+           this integrates square disks out and collapses them onto
+           the z-axis, NOT circles. (should be fixed) The 'radius' R
+           determines the maximum grid dimensions ie length of the
+           'square disk'.
+
+           Could be fixed by moving it into the 'profile' loop but I
+           leave it for consistency with previous calculations for the
+           time being. See lzdf for alternative.
+
         */
 	zdf[k][1] += tgrid.grid[i][j][k];
+
       }
     }
     /* zdf --  z at the center of each cell --> +0.5 
@@ -596,10 +649,35 @@ int main(int argc,char *argv[])
     */
     zdf[k][0]  = tgrid.a[ZZ] + (k+0.5)*tgrid.Delta[ZZ];
     zdf[k][1] /= (real)tgrid.mx[XX]*(real)tgrid.mx[YY] * DensUnit[nunit];
-    
+
+    /* 
+       ====================================
+       n(z) = Sum n(x,y,z) * dV / (A*dz)
+       ====================================
+
+       lzdf[k] * dV: avg number of particles in slice.
+       Divide by total area pi*R^2 * dz 
+
+      effective area is A=pi*Agyr
+
+     */
+    lzdf[k][0] = zdf[k][0]; 
+    Agyr /= 0.5*lzdf[k][1];    /* normalisation; 1/2 from comparison with const density */
+    lzdf[k][2] = sqrt(Agyr)*DeltaR; /* Rgyr, nm  */
+    Agyr *= PI;     
+
+    /* dV/(Delta[ZZ]*sqr(DeltaR) ~= 1 */
+    lzdf[k][1] = lzdf[k][1]*dV/(tgrid.Delta[ZZ]*Agyr*DeltaR*DeltaR * DensUnit[nunit]);
+#ifdef DEBUG
+      printf("[k=%d] dV=%g dz=%g dr=%g nocc=%d Rgyr=%g Rgyr/R=%g Agyr=%g nm^2 Agyr=%g\n",
+             k,
+             dV,tgrid.Delta[ZZ],DeltaR,nocc,
+             lzdf[k][2], lzdf[k][2]/geometry.radius, Agyr*DeltaR*DeltaR, Agyr);
+#endif
     /* pore profile (z, R*(z))  */
     profile[k][0] = tgrid.a[ZZ] + (k+0.5)*tgrid.Delta[ZZ];
     profile[k][1] = sqrt(profile[k][1]*dV/(PI*tgrid.Delta[ZZ]));
+
   }
 
   /* radial distributions 
@@ -679,6 +757,7 @@ int main(int argc,char *argv[])
     fprintf (fOut,"%.6f   %.6f\n",
 	     profile[k][0],profile[k][1]);
   };
+  fclose(fOut);
   
   /* projections */
   /* see 
@@ -779,6 +858,19 @@ int main(int argc,char *argv[])
     fprintf (fOut,"%.6f   %.6f\n",
 	     zdf[k][0],zdf[k][1]);
   };
+  fclose(fOut);
+
+  snprintf(s_tmp,STRLEN,"n\\slocal\\N(z) [%s]",EDENSUNITTYPE(nunit));
+  fOut = xmgropen (opt2fn("-lzdf",NFILE,fnm),
+		       "Local density axial distribution function n\\slocal\\N(z)",
+		       header, "z [nm]", s_tmp);
+  for(k=0;k<tgrid.mx[ZZ];k++) {
+    fprintf (fOut,"%.6f   %.6f   %.6f  %.6f\n",
+	     lzdf[k][0],lzdf[k][1],lzdf[k][2],lzdf[k][2]/geometry.radius); 
+             /* z p(z)  rgyr(z) rgyr(z)/R */
+  };
+  fclose(fOut);
+
 
   /* (2) radial distribution function */
   if (bDebugMode()) {
@@ -799,6 +891,7 @@ int main(int argc,char *argv[])
     fprintf (fOut,"%.6f   %.6f\n",
 	     rdf[irad][0],rdf[irad][1]);
   };
+  fclose(fOut);
 
   if (opt2bSet("-hrdf",NFILE,fnm)) {
     snprintf(s_tmp,STRLEN,"h(r) [%s]",EDENSUNITTYPE(eduUNITY));
@@ -809,6 +902,7 @@ int main(int argc,char *argv[])
       fprintf (fOut,"%.6f   %.6f\n",
 	       hrdf[irad][0],hrdf[irad][1]);
     };
+    fclose(fOut);
   }
 
   /* dump grid as ascii */
@@ -841,6 +935,7 @@ int main(int argc,char *argv[])
   free_tgrid(&tgrid);
   sfree(rdf);
   sfree(zdf);
+  sfree(lzdf);
   sfree(hrdf);
   grid2_free(xzp);
   grid2_free(xyp);

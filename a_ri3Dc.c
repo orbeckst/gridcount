@@ -82,6 +82,10 @@ static char *SRCID_a_ri3Dc_c = "$Id$";
 #define RAD_BA_NR   0
 #define RAD_BA_STEP 1
 
+#define OCCUPIED_MIN 0       /* occupancy must be greater than this to
+                                  be counted as occupied for volume
+                                  calculations */
+
 void update_tgrid (t_tgrid *);
 void tgrid2cavity (t_tgrid *, t_cavity *);
 static gmx_inline bool bInCircle(real,real,real,real,real);
@@ -262,7 +266,9 @@ int main(int argc,char *argv[])
     "axial distribution function (zdf):\n"
     "               P(z) = 1/Lx 1/Ly Int dx dy n(x,y,z)\n"
     "P(r) and P(z) are actually averaged densities (normalisation is straightforward"
-    "to turn them into 'real' probability distributions)."
+    "to turn them into 'real' probability distributions).\n"
+    "The local density axial distribution function -lzdf averages over all  "
+    "occupied grid cells per z-slice. The cut-off is set with -minocc."
     "[PAR]For diagnostic purposes one can also plot the radial distributions of "
     "the unoccupied cells (holes in the grid) in order to find suitable grid "
     "spacings.\n"
@@ -320,8 +326,9 @@ int main(int argc,char *argv[])
     { "-delta",  FALSE, etRVEC, {&(Delta)},
       "HIDDENSpatial resolution in X, Y, and Z for resampling (in nm)"},
     { "-minocc",   FALSE, etREAL, {&min_occ},
-      "HIDDENThe occupancy of a  cell must be larger than this number so that it is "
-      "counted as occupied when calculating the volume and effective radius"},
+      "The occupancy of a  cell must be larger than this number so that it is "
+      "counted as occupied when calculating the volume, effective radius "
+      "and local density axial distribution -lzdf"},
     { "-subtitle", FALSE, etSTR, {&header},
       "Some text to add to the output graphs"},
     { "-mirror", FALSE, etBOOL, {&bMirror},
@@ -352,6 +359,7 @@ int main(int argc,char *argv[])
     { efDAT, "-rzp",  "rzp",  ffWRITE },
     { efXVG, "-rdf",  "rdf",  ffWRITE },
     { efXVG, "-zdf",  "zdf",  ffWRITE },
+    { efXVG, "-lzdf", "lzdf", ffWRITE },
     { efDAT, "-hxyp", "hxyp", ffOPTWR },
     { efDAT, "-hrzp", "hrzp", ffOPTWR },
     { efXVG, "-hrdf", "hrdf", ffOPTWR },
@@ -373,13 +381,15 @@ int main(int argc,char *argv[])
   real       **hrzp=NULL;   /* distribution of unoccupied cells */
   double     sumP,sumH;     /* Sum_xyz P(x,y,z); sumH is over
                                unoccupied cells */
-  real       **rdf=NULL;          /* P(r) */
-  real       **zdf=NULL;          /* P(z) */  				
+  real       **rdf=NULL;          /* n(r) */
+  real       **zdf=NULL;          /* n(z) */  		
+  real       **lzdf=NULL;         /* n(z), but from occupied cells only */
   real       **hrdf=NULL;
 
   enum eDensUnit nunit = eduUNITY;       /* how to measure the density */
 
   int i,j,k;
+  int nocc;         /* number of occupied (> min_occ) cells */
   double dV;        /* volume of a cell */
   real height;      /* z2 - z1 */
   real volume = 0;
@@ -476,9 +486,10 @@ int main(int argc,char *argv[])
     fatal_error (-1,"FAILED: allocating memory for the projection maps\n");
 
   /* setup zdf */
-  if (!(zdf=grid2_alloc(tgrid.mx[ZZ],2)))
+  if (! (zdf=grid2_alloc(tgrid.mx[ZZ],2)) ||
+      !(lzdf=grid2_alloc(tgrid.mx[ZZ],2)))
     fatal_error (-1,"FAILED: allocating memory for the axial "
-		 "distribution function\n");
+		 "distribution functions\n");
 
   /* setup radial distributions (rdf and rzprojection)   */
   iradNR = (int)floor(geometry.radius/DeltaR);
@@ -521,6 +532,7 @@ int main(int argc,char *argv[])
          1/L Integral_L dx f(x) = 1/n_x Sum_i        f_i
   */
   for(k=0;k<tgrid.mx[ZZ];k++) {
+    nocc=0;      /* number of occupied cells in this xy layer */
     for(j=0;j<tgrid.mx[YY];j++) {
       for(i=0;i<tgrid.mx[XX];i++) {
 	/* projections on planes */
@@ -587,8 +599,14 @@ int main(int argc,char *argv[])
 	/* axial distribution function zdf (normalise later) 
            Note: this integrates square disks out and collapses them onto 
                  the z-axis, NOT circles. (should be fixed) 
+                 The 'radius' determines the maximum grid dimensions ie length
+                 of the 'square disk'.
         */
 	zdf[k][1] += tgrid.grid[i][j][k];
+        if (tgrid.grid[i][j][k] > min_occ) {
+          nocc++;
+          lzdf[k][1] += tgrid.grid[i][j][k];
+        }
       }
     }
     /* zdf --  z at the center of each cell --> +0.5 
@@ -596,7 +614,10 @@ int main(int argc,char *argv[])
     */
     zdf[k][0]  = tgrid.a[ZZ] + (k+0.5)*tgrid.Delta[ZZ];
     zdf[k][1] /= (real)tgrid.mx[XX]*(real)tgrid.mx[YY] * DensUnit[nunit];
-    
+
+    lzdf[k][0] = zdf[k][0]; 
+    lzdf[k][1] /= (real)nocc * DensUnit[nunit];    
+
     /* pore profile (z, R*(z))  */
     profile[k][0] = tgrid.a[ZZ] + (k+0.5)*tgrid.Delta[ZZ];
     profile[k][1] = sqrt(profile[k][1]*dV/(PI*tgrid.Delta[ZZ]));
@@ -679,6 +700,7 @@ int main(int argc,char *argv[])
     fprintf (fOut,"%.6f   %.6f\n",
 	     profile[k][0],profile[k][1]);
   };
+  fclose(fOut);
   
   /* projections */
   /* see 
@@ -779,6 +801,18 @@ int main(int argc,char *argv[])
     fprintf (fOut,"%.6f   %.6f\n",
 	     zdf[k][0],zdf[k][1]);
   };
+  fclose(fOut);
+
+  snprintf(s_tmp,STRLEN,"n\\slocal\\N(z) [%s]",EDENSUNITTYPE(nunit));
+  fOut = xmgropen (opt2fn("-lzdf",NFILE,fnm),
+		       "Local density axial distribution function n\\slocal\\N(z)",
+		       header, "z [nm]", s_tmp);
+  for(k=0;k<tgrid.mx[ZZ];k++) {
+    fprintf (fOut,"%.6f   %.6f\n",
+	     lzdf[k][0],lzdf[k][1]);
+  };
+  fclose(fOut);
+
 
   /* (2) radial distribution function */
   if (bDebugMode()) {
@@ -799,6 +833,7 @@ int main(int argc,char *argv[])
     fprintf (fOut,"%.6f   %.6f\n",
 	     rdf[irad][0],rdf[irad][1]);
   };
+  fclose(fOut);
 
   if (opt2bSet("-hrdf",NFILE,fnm)) {
     snprintf(s_tmp,STRLEN,"h(r) [%s]",EDENSUNITTYPE(eduUNITY));
@@ -809,6 +844,7 @@ int main(int argc,char *argv[])
       fprintf (fOut,"%.6f   %.6f\n",
 	       hrdf[irad][0],hrdf[irad][1]);
     };
+    fclose(fOut);
   }
 
   /* dump grid as ascii */
@@ -841,6 +877,7 @@ int main(int argc,char *argv[])
   free_tgrid(&tgrid);
   sfree(rdf);
   sfree(zdf);
+  sfree(lzdf);
   sfree(hrdf);
   grid2_free(xzp);
   grid2_free(xyp);

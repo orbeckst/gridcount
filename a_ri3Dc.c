@@ -481,7 +481,7 @@ int main(int argc,char *argv[])
 		 "distribution function\n");
 
   /* setup radial distributions (rdf and rzprojection)   */
-  iradNR = (int)floor(geometry.radius/DeltaR)+1;
+  iradNR = (int)floor(geometry.radius/DeltaR);
   snew(rweight,iradNR);
   if (!rweight || !(rdf=grid2_alloc(iradNR,2)))
     fatal_error (-1,"FAILED: allocating memory for the radial "

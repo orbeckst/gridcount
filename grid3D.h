@@ -59,9 +59,6 @@ static char *SRCID_grid3D_h = "$Id$";
 #include "count.h"
 #include "utilgmx.h"
 
-#define OCCUPIED_MIN 0       /* occupancy must be greater than this to
-                                  be counted as occupied for volume
-                                  calculations */
 typedef struct {
   /* everything about the grid */
   real ***grid;    /* MX x MY x MZ */

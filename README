@@ -71,7 +71,8 @@ instructions for usage in the comments at the top.
 Examples of figures created with these programs can be found on
 http://sansom.biop.ox.ac.uk/oliver/research/pores/hyphobpores.html#liquidvapourosc,
 Beckstein and Sansom, PNAS 100 (2003), 7063 and Beckstein and Sansom,
-Phys Biol (2004), http://arxiv.org/abs/q-bio/0402041.
+Phys Biol 1 (2004), 43, http://stacks.iop.org/1478-3975/1/42 or
+http://arxiv.org/abs/q-bio/0402041. 
 
 The latest version is available at 
 http://sansom.biop.ox.ac.uk/oliver/software/#gridcount ; at some point
@@ -118,15 +119,15 @@ TODO
 ====
 
 * libgridcount should not really be installed but I couldn't figure
-  out to do the whole automake process so that always a static version
-  is build and linked. It was easier to use standard libtool...
+  out how to use automake to only build a local static version. It was
+  easier to use standard libtool...
 
   This library is not tested for anything else than collecting an
   otherwise increasing number of small object files during building of
   the main programs.
 
 * Resampling of the grid (ie coarse graining) should be possible in
-  a_ri3Dc but it isn't.
+  a_ri3Dc but it isn't (yet).
 
 * There should be a way of switching on all (hidden) plots of empty
   cells (`holes') with one option instead of specifying all hole

@@ -49,16 +49,8 @@ static char *SRCID_a_ri3Dc_c = "$Id$";
    N_min     OCCUPIED_MIN
    delta_V   volume of a cell = delta_x * delta_y * delta_z
 
-     R*(z) = sqrt(V(z)/(pi*delta_z))
+   R*: effective radius: Radius of gyration of the density in the slice at z
 
-   R*(z)     pore profile
-   V(z)      volume of a slice centered at height z
-
-   and the total effective radius R*
-
-     R* = sqrt(V/pi*L)
- 
-   
    Output:
 
    profile:  (z, R*(z))
@@ -260,18 +252,21 @@ int main(int argc,char *argv[])
     "xz, y-averaged:        1/Ly Int_y n(x,y,z)\n"
     "yz, x-averaged:        1/Lx Int_x n(x,y,z)\n"
     "radially averaged:  1/2pi r Int_phi n(r,phi,z)\n"
-    "pore profile:       (z, R*(z))\n"
+    "pore profile:       (z, R*(z), R*(z)/R)\n"
     "radial distribution function (rdf): \n"
     "               P(r) = 1/Lz 1/2pi r Int dphi dz n(r,phi,z)\n"
     "axial distribution function (zdf):\n"
     "               P(z) = 1/Lx 1/Ly Int dx dy n(x,y,z)\n"
-    "P(r) and P(z) are actually averaged densities (normalisation is straightforward"
-    "to turn them into 'real' probability distributions).\n"
+    "P(r) and P(z) are actually averaged densities (normalisation is straightforward "
+    "in order to turn them into 'real' probability distributions).\n"
     "The local density axial distribution function -lzdf averages over all  "
-    "occupied grid cells per z-slice and divides by an effective area which is determined "
-    "from the 'radius of gyration' of the density. The radius is a good approximation to the "
-    "pore profile (MUCH better than -profile) and output as 1:3 in lzdf. The density itself "
-    "is 1:2 in the lzdf.xvg file. "
+    "occupied grid cells per z-slice and divides by an effective area which is "
+    "determined from the 'radius of gyration' of the density:\n" 
+    "               R*(z)^2 = 2 Int_0^2pi dphi Int_0^R dr r^3 n(r,phi,z)/"
+    "Int drho dphi r n(r,phi,z)\n"
+    "This radius is a good approximation to the "
+    "pore profile (eg compared to HOLE). The density itself is in the "
+    "lzdf.xvg file."
     "[PAR]For diagnostic purposes one can also plot the radial distributions of "
     "the unoccupied cells (holes in the grid) in order to find suitable grid "
     "spacings.\n"
@@ -289,7 +284,6 @@ int main(int argc,char *argv[])
     "There are still a few hidden options of questionable usefulness. "
     "Resampling (=changing Delta) is not implemented yet.",
     "gOpenMol plt binary file comes out with wrong suffix",
-    "-profile should be removed, it's crap. local density is better.",
     "note: -minocc also influences -lzdf"
   };
 
@@ -396,7 +390,8 @@ int main(int argc,char *argv[])
 
   int i,j,k;
   int nocc;         /* number of occupied (> min_occ) cells */
-  real Agyr;        /* 'radius of gyration' for occupied cells */
+  real Rgyr2;       /* 'radius of gyration' squared for occupied cells */
+  real Agyr;        /* area Agyr = pi * Rgyr^2 */  
   double dV;        /* volume of a cell */
   real height;      /* z2 - z1 */
   real volume = 0;
@@ -484,21 +479,21 @@ int main(int argc,char *argv[])
     dmsg("Warning: Delta[XX]=%.4f != Delta[YY]=%.4f, setting DeltaR=%.4f\n",
 	 tgrid.Delta[XX], tgrid.Delta[YY], DeltaR);
 
-  /* setup profile */
-  if (!(profile=grid2_alloc(tgrid.mx[ZZ],2)))
-    fatal_error (-1,"FAILED: allocating memory for the profile\n");
-
   /* setup proj */
   if (!(xyp=grid2_alloc(tgrid.mx[XX],tgrid.mx[YY])) ||
       !(xzp=grid2_alloc(tgrid.mx[XX],tgrid.mx[ZZ])) ||
       !(yzp=grid2_alloc(tgrid.mx[YY],tgrid.mx[ZZ])))
     fatal_error (-1,"FAILED: allocating memory for the projection maps\n");
 
-  /* setup zdf */
+  /* setup axial distribution (zdf) and profile  
+     We are wasting memory because the x-column is identical for all of them
+     but its conceptually simpler.
+   */
   if (! (zdf=grid2_alloc(tgrid.mx[ZZ],2)) ||
-      !(lzdf=grid2_alloc(tgrid.mx[ZZ],3)))
+      ! (lzdf=grid2_alloc(tgrid.mx[ZZ],2)) ||
+      ! (profile=grid2_alloc(tgrid.mx[ZZ],2)))
     fatal_error (-1,"FAILED: allocating memory for the axial "
-		 "distribution functions\n");
+		 "distribution functions or the profile\n");
 
   /* setup radial distributions (rdf and rzprojection)   */
   iradNR = (int)floor(geometry.radius/DeltaR);
@@ -542,7 +537,7 @@ int main(int argc,char *argv[])
   */
   for(k=0;k<tgrid.mx[ZZ];k++) {
     nocc=0;      /* number of occupied cells in this xy layer */
-    Agyr=0;      /* radius of gyration for occupied cells */
+    Rgyr2=0;      /* radius of gyration for occupied cells */
     for(j=0;j<tgrid.mx[YY];j++) {
       for(i=0;i<tgrid.mx[XX];i++) {
 	/* projections on planes */
@@ -562,19 +557,13 @@ int main(int argc,char *argv[])
 	ci = ((real)i+0.5) - (real)tgrid.mx[XX]/2.0;
 	cj = ((real)j+0.5) - (real)tgrid.mx[YY]/2.0;
 
-
-	/* pore profile from volumes of z-slices 
-	   This is inexact if dV is so small that there are lots of
-	   unoccupied cells (holes) in the inner region. Use the hole
-	   distributions to check that!  
-        */
 	if (tgrid.grid[i][j][k] > min_occ && 
 	    bInCircle((real)i, (real)j, 
 		      (real)tgrid.mx[XX]/2.0, (real)tgrid.mx[YY]/2.0, 
 		      geometry.radius/DeltaR))  {
 	  /* multiply by dV later */
 	  volume++;        /* total number of occupied cells */
-	  profile[k][1]++;
+          nocc++;          /* per k-slice; not used, just for debugging or future use */
 
           /* local density axial distribution function
              the area is estimated as the 'radius of gyration' of the occupied 
@@ -587,18 +576,18 @@ int main(int argc,char *argv[])
              units of DeltaR for radius
           */
         
-          /* occupied cells per k-slice (though Agyr could equally
-             calculated from ALL cells; empty grid cells don't have
-             any weight in the sum)
+          /* Rgyr2 could equally be calculated from ALL cells; empty
+             grid cells don't have any weight in the sum)
           */
-          nocc++;          /* not used, just for debugging or future use */
           lzdf[k][1] += tgrid.grid[i][j][k]; 
-          Agyr += tgrid.grid[i][j][k] * (ci*ci + cj*cj);
+          Rgyr2 += tgrid.grid[i][j][k] * (ci*ci + cj*cj);
 	}
 
 
-	/* radial distributions */
-
+	/* ------------------------------------------------------------
+           radial distributions 
+           ------------------------------------------------------------ 
+        */
 
 	/* radius in units DeltaR (really:
 	   sqrt((i*DX)^2+(j*DY)^2)/DeltaR but with the fixed setting
@@ -649,36 +638,40 @@ int main(int argc,char *argv[])
     */
     zdf[k][0]  = tgrid.a[ZZ] + (k+0.5)*tgrid.Delta[ZZ];
     zdf[k][1] /= (real)tgrid.mx[XX]*(real)tgrid.mx[YY] * DensUnit[nunit];
+    lzdf[k][0] = profile[k][0] = zdf[k][0];     /* z coordinate */
 
-    /* 
-       ====================================
+    /* normalisation; factor 2 from comparison with result for const
+       density; see Labbook V, p11 */  
+    Rgyr2 /= 0.5*lzdf[k][1];  
+
+    /* pore profile (z, R*(z))  */
+    profile[k][1] = sqrt(Rgyr2)*DeltaR;         /* Rgyr, nm  */
+
+    Agyr = PI * Rgyr2;                          /* effective area */
+
+    /* Axial density profile (radially averaged) using local density
+       and an approximation to the pore radius as the radius of
+       gyration of the density, Rgyr
+       
        n(z) = Sum n(x,y,z) * dV / (A*dz)
-       ====================================
+       lzdf[k] * dV: avg number of particles in slice.  
+       Divide by total volume of the slice with the effective area
+       A=pi*Rgyr2
 
-       lzdf[k] * dV: avg number of particles in slice.
-       Divide by total area pi*R^2 * dz 
+       dV/(Delta[ZZ]*sqr(DeltaR) == 1 but we do it explicitly because
+       it might break when code related to DeltaR is changed
 
-      effective area is A=pi*Agyr
-
+       lzdf[k][1] /= Agyr * DensUnit[nunit];
      */
-    lzdf[k][0] = zdf[k][0]; 
-    Agyr /= 0.5*lzdf[k][1];    /* normalisation; 1/2 from comparison with const density */
-    lzdf[k][2] = sqrt(Agyr)*DeltaR; /* Rgyr, nm  */
-    Agyr *= PI;     
-
-    /* dV/(Delta[ZZ]*sqr(DeltaR) ~= 1 */
     lzdf[k][1] = lzdf[k][1]*dV/(tgrid.Delta[ZZ]*Agyr*DeltaR*DeltaR * DensUnit[nunit]);
+
 #ifdef DEBUG
       printf("[k=%d] dV=%g dz=%g dr=%g nocc=%d Rgyr=%g Rgyr/R=%g Agyr=%g nm^2 Agyr=%g\n",
              k,
              dV,tgrid.Delta[ZZ],DeltaR,nocc,
-             lzdf[k][2], lzdf[k][2]/geometry.radius, Agyr*DeltaR*DeltaR, Agyr);
+             profile[k][1], lzdf[k][2]/geometry.radius, Agyr*DeltaR*DeltaR, Agyr);
 #endif
-    /* pore profile (z, R*(z))  */
-    profile[k][0] = tgrid.a[ZZ] + (k+0.5)*tgrid.Delta[ZZ];
-    profile[k][1] = sqrt(profile[k][1]*dV/(PI*tgrid.Delta[ZZ]));
-
-  }
+  } /* end loop over k-slices (ie z) */
 
   /* radial distributions 
      (1) normalisation (important!!) 
@@ -750,15 +743,22 @@ int main(int argc,char *argv[])
   /* 
      write output 
   */
+
+  /* pore radius profile, based on how many particles fill the probed cylinder 
+     Format:
+     z/nm   R* /nm   R* /R 
+                     (should approach 1 for bulk)
+   */ 
   fOut = xmgropen (opt2fn("-profile",NFILE,fnm),
-		       "Effective radius R*(z)-r\\swater\\N pore profile",
+		       "Effective radius R*(z) pore profile",
 		       header, "z [nm]", "R* [nm]");
   for(k=0;k<tgrid.mx[ZZ];k++) {
-    fprintf (fOut,"%.6f   %.6f\n",
-	     profile[k][0],profile[k][1]);
+    fprintf (fOut,"%.6f   %.6f  %.6f\n",
+	     profile[k][0],profile[k][1],profile[k][1]/geometry.radius);
   };
   fclose(fOut);
-  
+
+
   /* projections */
   /* see 
      http://www.fhi-berlin.mpg.de/gnz/pub/xfarbe/xfarbe-2.6/html/#Format%20of%20Data%20Files 
@@ -865,8 +865,8 @@ int main(int argc,char *argv[])
 		       "Local density axial distribution function n\\slocal\\N(z)",
 		       header, "z [nm]", s_tmp);
   for(k=0;k<tgrid.mx[ZZ];k++) {
-    fprintf (fOut,"%.6f   %.6f   %.6f  %.6f\n",
-	     lzdf[k][0],lzdf[k][1],lzdf[k][2],lzdf[k][2]/geometry.radius); 
+    fprintf (fOut,"%.6f   %.6f\n",
+	     lzdf[k][0],lzdf[k][1]); 
              /* z p(z)  rgyr(z) rgyr(z)/R */
   };
   fclose(fOut);

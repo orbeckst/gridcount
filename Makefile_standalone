@@ -78,7 +78,7 @@ ALL_PROG := $(G_RI3DC) $(A_RI3DC)
 
 DIST_GRIDCOUNT_H   := $(sort  $(A_RI3DC_H) $(G_RI3DC_H) $(LIBGC_H))
 DIST_GRIDCOUNT_SRC := $(sort  $(A_RI3DC_SRC) $(G_RI3DC_SRC) $(LIBGC_SRC))
-DIST_GRIDCOUNT_MAKE     := Makefile.am Makefile_standalone
+DIST_GRIDCOUNT_MAKE     := Makefile.am Makefile.in Makefile_standalone
 DIST_GRIDCOUNT_EXAMPLES := examples/Makefile.grid examples/slicer.pl
 DIST_GRIDCOUNT_DOCS     := README INSTALL
 

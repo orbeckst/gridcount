@@ -1,0 +1,136 @@
+$Id$
+Grid counter g_ri3Dc and analysis tool a_ri3Dc
+Copyright (C) 2004 Oliver Beckstein <oliver@biop.ox.ac.uk>
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+or find it online at http://www.gnu.org/copyleft/gpl.html
+
+
+
+Short introduction
+==================
+
+g_ri3Dc counts occurrences of molecules on a 3D grid over a MD
+trajectory. A typical application is to choose the water index group
+as the molecules to be counted. This creates (after proper
+normalisation) a 3D density map. The map is written in a
+system-independent (xdr) grid file (format defined in grid3D.h) for
+once and all.
+
+Note that for most practical purposes you should center your
+trajectory on your molecule of interest so that it does not diffuse
+through the grid. This is especially important for pore proteins,
+carbon nano tubes and the like when you want to calculate
+cylindrically averaged densities with the analysis program.
+
+The grid file is read in by a_ri3Dc, the analysis and converter
+tool. At the moment it is mainly useful to calculate cylindrical and
+slice averages and convert the density map into gOpenMol's plt format,
+which can also be read by VMD (from version 1.8.2
+onwards). Alternatively, it also outputs the whole grid in ASCII
+format.
+
+It outputs 1D graphs (can be displayed with xmgrace
+http://plasma-gate.weizmann.ac.il/Grace/) and 2D data and parameter
+files which are suitable for xfarbe (A. Preusser,
+http://www.fhi-berlin.mpg.de/~grz/pub/xfarbe.html).
+
+As an example I added a Makefile (examples/Makefile.grid) that I use
+to create a whole bunch of graphics, including eps from the 2D plots
+(see the top of Makefile.grid for instructions). examples/slicer.pl is
+a small script to generate a succession of 2D density slices of a
+given width.
+
+
+
+Documentation
+=============
+
+Please bear in mind that this is not a finished product. It is
+provided in the hope that it might be useful to others but it might
+require some work on your part to figure out how to put it to best
+use.
+
+Please read the output of -h to get started; the source code has also
+some documentation (apart from the 'self-documenting code'
+itself...). The examples/Makefile.grid shows real-life usage and has
+instructions for usage in the comments at the top.
+
+Examples of figures created with these programs can be found on
+http://sansom.biop.ox.ac.uk/oliver/research/pores/hyphobpores.html#liquidvapourosc,
+Beckstein and Sansom, PNAS 100 (2003), 7063 and Beckstein and Sansom,
+Phys Biol (2004), http://arxiv.org/abs/q-bio/0402041.
+
+The latest version is available at 
+http://sansom.biop.ox.ac.uk/oliver/software/#gridcount ; at some point
+I might even add some documentation...
+
+
+
+Additional software
+===================
+
+Gromacs   http://www.gromacs.org (version 3.x) 
+xfarbe    http://www.fhi-berlin.mpg.de/~grz/pub/xfarbe.html
+VMD       http://www.ks.uiuc.edu/Research/vmd/
+gOpenMol  http://www.csc.fi/gopenmol/
+
+
+
+BUGs and such
+=============
+
+* Feel free to send feedback to Oliver Beckstein
+  <oliver@biop.ox.ac.uk>
+
+* Problems during compilation/installation: see INSTALL
+
+* PLEASE read the documentation produced by running the programs with
+  the '-h' flag and in particular note the 'BUGs and known limitation'
+  section of the output.
+
+* In particular, when counting ions it is essential to explicitly use
+  the '-nom' option. 
+
+* The analysis tool is fairly limited. I use it to generate densities
+  in channels and pores (that's why it only does cylindrical
+  averages). If you need spherical spatial distribution functions look
+  into Christoph Freudenberger's g_sdf.
+
+* When the box size or shape changes over time (for instance, due to
+  pressure coupling or centering of a trajectory on a protein) then
+  the outer regions of the density are necessarily ill defined and
+  need to be discarded.
+
+TODO
+====
+
+* libgridcount should not really be installed but I couldn't figure
+  out to do the whole automake process so that always a static version
+  is build and linked. It was easier to use standard libtool...
+
+  This library is not tested for anything else than collecting an
+  otherwise increasing number of small object files during building of
+  the main programs.
+
+* Resampling of the grid (ie coarse graining) should be possible in
+  a_ri3Dc but it isn't.
+
+* There should be a way of switching on all (hidden) plots of empty
+  cells (`holes') with one option instead of specifying all hole
+  options separately.
+
+* Probably more code cleanup.
+

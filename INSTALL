@@ -1,0 +1,130 @@
+$Id$
+Grid counter g_ri3Dc and analysis tool a_ri3Dc
+Copyright (C) 2004 Oliver Beckstein <oliver@biop.ox.ac.uk>
+Released under the GNU Public License (see COPYING)
+
+
+Installation and Compilation 
+============================
+
+There are two ways to compile (and install the programs). The first
+uses the configuration and compilation process of the full Gromacs
+source tree (see `As contributed software'), the second only requires
+you to have the Gromacs include files and libgmx and libmd installed
+(`Standalone').  
+
+Both programs utilise a number of common routines so it was natural to
+bundle them in a small library, libgridcount. 
+
+These programs were compiled and tested with Gromacs 3.1.4 and Gromacs
+3.2.1 under Red Hat 8.0 Linux and Debian Linux.
+
+
+As contributed software
+-----------------------
+
+(1)  If you received gridcount as a part of the Gromacs sources then
+     you are currently in `src/contrib/gridcount' and you will
+     likely have a file `Makefile.in': You can fast-forward to step 2.
+
+(1b) If you don't have the src/contrib/gridcount directory then place
+     the `gridcount' directory  into `src/contrib', eg
+
+       cd src/contrib
+       tar -zxvf gridcount-1.0.tar.gz 
+       mv gridcount-1.0 gridcount
+
+(1c) Integrate gridcount into the autoconf process of the source tree:  
+     * Add `src/contrib/gridcount/Makefile' to `AC_CONFIG_FILES' in 
+       config.ac in the top directory.        
+     * Bootstrap your sources (requires the development
+       tools). Execute in the top directory
+
+         automake && autoconf
+
+     You should now have `Makefile.in' in the gridcount.directory
+       
+(2)  Configure the source tree as usual, ie `./configure ...'  or if
+     you have done this already a simple `./config.status' should
+     suffice.
+
+(3)  Build Gromacs (or if you already have done so, skip to (4))
+
+(4)  Build gridcount (which is not done by default):
+      
+         cd src/contrib/gridcount
+         make
+
+(5)  Install
+
+         make install
+    
+     (sorry, this also installs libgridcount even if it is not needed)
+
+
+
+Standalone
+----------
+
+In order to compile the programs in this directory on their own you
+will need an existing gromacs installation, i.e. the header files and
+the libmd and libgmx libraries.
+
+(1) Edit `Makefile_standalone' (perhaps different BIN_DIR path for
+    install, location of the libgmx and libmd libraries and header
+    files, ...)
+
+    `make -f Makefile_standalone help' shows your current settings.
+
+(2) Compile the programs
+    
+       make -f Makefile_standalone
+
+(3)  Install
+      
+       make -f Makefile_standalone install
+    
+
+Problems 
+========
+
+* xdr system header files not found
+  - If compiling standalone make sure that your compiler can find the
+    xdr header files which do exist on most systems (if you managed to
+    compile gromacs in any case). /usr/include/rpc seems a standard
+    location.
+
+    However, if you managed to compile gromacs then I suggest you
+    compile gridcount simply as contributed software as described
+    above and everything should sort out itself.
+
+  - Campbell Millar <c.millar@elec.gla.ac.uk> reports that on Apple,
+    Solaris and SGI some typedefs were missing. If you seem to have
+    this problem try patching xdr_grid.h by issuing
+
+    patch < INSTALL
+
+#------------------------[xdr_grid.h.diff]--------------------------------------
+
+--- xdr_grid.h  2004-03-23 15:58:43.000000000 +0000
++++ xdr_grid.h_SOLARIS  2004-03-23 16:08:04.000000000 +0000
+@@ -20,4 +20,5 @@
+
+ #include <stdio.h>
++#include <sys/types.h>
+ #include <rpc/xdr.h>
+ #include "fatal.h"
+@@ -27,4 +28,11 @@
+ #include "utilgmx.h"
+
++/* Campbell Millar <c.millar@elec.gla.ac.uk>: Apparently,  on apple, SGI and Solaris
++   the following types are not defined (though in Linux they come with <rpc/types.h>,
++   included from <rpc/xdr.h>)
++*/
++typedef bool_t int;
++typedef enum_t int;
++
+ /* Version number of the file format is an integer, which is incremented
+    when changes are made. If the change breaks something then one has to add
+
+#------------------------[xdr_grid.h.diff]--------------------------------------

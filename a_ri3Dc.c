@@ -558,8 +558,11 @@ int main(int argc,char *argv[])
 		      (real)tgrid.mx[XX]/2.0, (real)tgrid.mx[YY]/2.0, 
 		      geometry.radius/DeltaR))  {
 	  /* multiply by dV later */
-	  volume++;
+	  volume++;        /* total number of occupied cells */
 	  profile[k][1]++;
+
+          nocc++;          /* occupied cells per k-slice */
+          lzdf[k][1] += tgrid.grid[i][j][k]; 
 	}
 
 	/* radial distributions */
@@ -604,12 +607,13 @@ int main(int argc,char *argv[])
                  the z-axis, NOT circles. (should be fixed) 
                  The 'radius' determines the maximum grid dimensions ie length
                  of the 'square disk'.
+
+           Could be fixed by moving it into the 'profile' loop but I
+           leave it for consistency with previous calculations for the
+           time being. See lzdf for alternative.
+
         */
 	zdf[k][1] += tgrid.grid[i][j][k];
-        if (tgrid.grid[i][j][k] > min_occ) {
-          nocc++;
-          lzdf[k][1] += tgrid.grid[i][j][k];
-        }
       }
     }
     /* zdf --  z at the center of each cell --> +0.5 
@@ -618,12 +622,34 @@ int main(int argc,char *argv[])
     zdf[k][0]  = tgrid.a[ZZ] + (k+0.5)*tgrid.Delta[ZZ];
     zdf[k][1] /= (real)tgrid.mx[XX]*(real)tgrid.mx[YY] * DensUnit[nunit];
 
+    /* lzdf[k] * dV: avg number of particles in slice.
+       Divide by total area pi*R^2 that we looked at and multiply by dz:
+
+       lzdf[k] * dV * dz / A == avg # particles per length dz
+
+       dV/(pi*R^2) = dx dy dz/(pi*(iradNR*deltaR)^2)
+           with deltaR == dx == dy
+       dz/(pi*iradNR^2)
+
+       --> n(z) = lzdf[k] * dz^2/(pi*iradNR^2)
+
+       occupied fraction: nocc/(PI*iradNR^2)
+
+       with units (conversion factor f=un/uV): dV = 1, dz = 1
+             uV  unit of volume
+             ux  unit of distance in x,y 
+       lzdf/f * dV = lzdf/un * uV* dV = N[k]/un * uV 
+                      
+       (anyway, lzdf/(pi*iR^2 * f) works....)
+
+     */
     lzdf[k][0] = zdf[k][0]; 
-    lzdf[k][1] /= (real)nocc * DensUnit[nunit];    
+    lzdf[k][1] /= (PI*(real)(iradNR*iradNR)) * DensUnit[nunit];
 
     /* pore profile (z, R*(z))  */
     profile[k][0] = tgrid.a[ZZ] + (k+0.5)*tgrid.Delta[ZZ];
     profile[k][1] = sqrt(profile[k][1]*dV/(PI*tgrid.Delta[ZZ]));
+
   }
 
   /* radial distributions 

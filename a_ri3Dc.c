@@ -268,7 +268,10 @@ int main(int argc,char *argv[])
     "P(r) and P(z) are actually averaged densities (normalisation is straightforward"
     "to turn them into 'real' probability distributions).\n"
     "The local density axial distribution function -lzdf averages over all  "
-    "occupied grid cells per z-slice. The cut-off is set with -minocc."
+    "occupied grid cells per z-slice and divides by an effective area which is determined "
+    "from the 'radius of gyration' of the density. The radius is a good approximation to the "
+    "pore profile (MUCH better than -profile) and output as 1:3 in lzdf. The density itself "
+    "is 1:2 in the lzdf.xvg file. "
     "[PAR]For diagnostic purposes one can also plot the radial distributions of "
     "the unoccupied cells (holes in the grid) in order to find suitable grid "
     "spacings.\n"
@@ -285,7 +288,9 @@ int main(int argc,char *argv[])
     "In any case one should never have different bin widths in X and Y.",
     "There are still a few hidden options of questionable usefulness. "
     "Resampling (=changing Delta) is not implemented yet.",
-    "gOpenMol plt binary file comes out with wrong suffix"
+    "gOpenMol plt binary file comes out with wrong suffix",
+    "-profile should be removed, it's crap. local density is better.",
+    "note: -minocc also influences -lzdf"
   };
 
   static t_cavity geometry = {   /* describes the cylinder */
@@ -586,14 +591,9 @@ int main(int argc,char *argv[])
              calculated from ALL cells; empty grid cells don't have
              any weight in the sum)
           */
-          //if (tgrid.grid[i][j][k] > min_occ) {
-            nocc++;          
-            lzdf[k][1] += tgrid.grid[i][j][k]; 
-            /* shouldnt this be relative to the COM of the cells instead
-               of the centre of the pore ? */
-            Agyr += tgrid.grid[i][j][k] * (ci*ci + cj*cj);
-            // Agyr += 1.0 * (ci*ci + cj*cj);
-            //}
+          nocc++;          /* not used, just for debugging or future use */
+          lzdf[k][1] += tgrid.grid[i][j][k]; 
+          Agyr += tgrid.grid[i][j][k] * (ci*ci + cj*cj);
 	}
 
 
@@ -662,7 +662,7 @@ int main(int argc,char *argv[])
 
      */
     lzdf[k][0] = zdf[k][0]; 
-    Agyr /= lzdf[k][1]/2.0;    /* normalisation; 1/2 from comparison with const density CHEATING */
+    Agyr /= 0.5*lzdf[k][1];    /* normalisation; 1/2 from comparison with const density */
     lzdf[k][2] = sqrt(Agyr)*DeltaR; /* Rgyr, nm  */
     Agyr *= PI;     
 

@@ -77,6 +77,7 @@ static char *SRCID_a_ri3Dc_c = "$Id$";
 #define OCCUPIED_MIN 0       /* occupancy must be greater than this to
                                   be counted as occupied for volume
                                   calculations */
+#define RWATER 0.14          /* canonical radius of a water molecule */
 
 void update_tgrid (t_tgrid *);
 void tgrid2cavity (t_tgrid *, t_cavity *);
@@ -265,8 +266,9 @@ int main(int argc,char *argv[])
     "               R*(z)^2 = 2 Int_0^2pi dphi Int_0^R dr r^3 n(r,phi,z)/"
     "Int drho dphi r n(r,phi,z)\n"
     "This radius is a good approximation to the "
-    "pore profile (eg compared to HOLE). The density itself is in the "
-    "lzdf.xvg file."
+    "pore profile (eg compared to HOLE). It describes the solvent accessible surface (SAS) "
+    "of the pore because the density is based on the centres of the molecules. "
+    "The density itself is in the lzdf.xvg file."
     "[PAR]For diagnostic purposes one can also plot the radial distributions of "
     "the unoccupied cells (holes in the grid) in order to find suitable grid "
     "spacings.\n"
@@ -313,6 +315,7 @@ int main(int argc,char *argv[])
    observation that densities for water in excess of 1.5 n_bulk rarely
    occur) */
   static real maxDensity = 48.48405;
+  static real rsolvent=RWATER; /* radius of a solvent molecule or ion */
 
 
   t_pargs pa[] = {
@@ -322,13 +325,16 @@ int main(int argc,char *argv[])
       "Center grid between z1, and ..."},
     { "-z2",     FALSE, etREAL, {&(geometry.z2)},
       "z2 (these boundaries are kept fixed!)"},
-    { "-delta",  FALSE, etRVEC, {&(Delta)},
+    { "-delta",  FALSE, etRVEC, {&Delta},
       "HIDDENSpatial resolution in X, Y, and Z for resampling (in nm)"},
     { "-minocc",   FALSE, etREAL, {&min_occ},
       "HIDDENThe occupancy of a  cell must be larger than this number so that it is "
       "counted as occupied when calculating the volume, effective radius "
       "and local density axial distribution -lzdf. This is given in the chosen "
       "units (see -unit)."},
+    { "-rsolvent", FALSE, etREAL, {&rsolvent},
+      "HIDDENradius of a solvent moelecule or ion; used to incorporate "
+      "the excluded volume in n(z) and is shown in the 3rd column in lzdf"},
     { "-subtitle", FALSE, etSTR, {&header},
       "Some text to add to the output graphs"},
     { "-mirror", FALSE, etBOOL, {&bMirror},
@@ -392,6 +398,7 @@ int main(int argc,char *argv[])
   int nocc;         /* number of occupied (> min_occ) cells */
   real Rgyr2;       /* 'radius of gyration' squared for occupied cells */
   real Agyr;        /* area Agyr = pi * Rgyr^2 */  
+  /* used to approximate the excluded volume */
   double dV;        /* volume of a cell */
   real height;      /* z2 - z1 */
   real volume = 0;
@@ -634,7 +641,7 @@ int main(int argc,char *argv[])
       }
     }
     /* zdf --  z at the center of each cell --> +0.5 
-       & normalise
+       & normalise by the area (square disks -> Lx * Ly)
     */
     zdf[k][0]  = tgrid.a[ZZ] + (k+0.5)*tgrid.Delta[ZZ];
     zdf[k][1] /= (real)tgrid.mx[XX]*(real)tgrid.mx[YY] * DensUnit[nunit];
@@ -865,9 +872,11 @@ int main(int argc,char *argv[])
 		       "Local density axial distribution function n\\slocal\\N(z)",
 		       header, "z [nm]", s_tmp);
   for(k=0;k<tgrid.mx[ZZ];k++) {
-    fprintf (fOut,"%.6f   %.6f\n",
-	     lzdf[k][0],lzdf[k][1]); 
-             /* z p(z)  rgyr(z) rgyr(z)/R */
+    fprintf (fOut,"%.6f   %.6f  %.6f\n",
+	     lzdf[k][0],lzdf[k][1],
+             lzdf[k][1]/(1+sqr(rsolvent/profile[k][1]))); 
+             /* z  n(z) n'(z) 
+              where n'(z) = N(z)/pi*(Rgyr+r)^2 with r: radius of solvent */
   };
   fclose(fOut);
 

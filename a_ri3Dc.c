@@ -328,7 +328,8 @@ int main(int argc,char *argv[])
     { "-minocc",   FALSE, etREAL, {&min_occ},
       "The occupancy of a  cell must be larger than this number so that it is "
       "counted as occupied when calculating the volume, effective radius "
-      "and local density axial distribution -lzdf"},
+      "and local density axial distribution -lzdf. This is given in the chosen "
+      "units (see -unit)."},
     { "-subtitle", FALSE, etSTR, {&header},
       "Some text to add to the output graphs"},
     { "-mirror", FALSE, etBOOL, {&bMirror},
@@ -447,6 +448,8 @@ int main(int argc,char *argv[])
   default:
     nunit = eduUNITY;
   } /*end switch */
+
+  min_occ *= DensUnit[nunit]; /* compare filling of cell in chosen unit */
 
   if(!opt2parg_bSet("-xfarbe-maxlevel",NPA,pa)) {
     maxDensity /= DensUnit[nunit];

@@ -391,6 +391,7 @@ int main(int argc,char *argv[])
 
   int i,j,k;
   int nocc;         /* number of occupied (> min_occ) cells */
+  real Agyr;        /* 'radius of gyration' for occupied cells */
   double dV;        /* volume of a cell */
   real height;      /* z2 - z1 */
   real volume = 0;
@@ -490,7 +491,7 @@ int main(int argc,char *argv[])
 
   /* setup zdf */
   if (! (zdf=grid2_alloc(tgrid.mx[ZZ],2)) ||
-      !(lzdf=grid2_alloc(tgrid.mx[ZZ],2)))
+      !(lzdf=grid2_alloc(tgrid.mx[ZZ],3)))
     fatal_error (-1,"FAILED: allocating memory for the axial "
 		 "distribution functions\n");
 
@@ -536,6 +537,7 @@ int main(int argc,char *argv[])
   */
   for(k=0;k<tgrid.mx[ZZ];k++) {
     nocc=0;      /* number of occupied cells in this xy layer */
+    Agyr=0;      /* radius of gyration for occupied cells */
     for(j=0;j<tgrid.mx[YY];j++) {
       for(i=0;i<tgrid.mx[XX];i++) {
 	/* projections on planes */
@@ -547,6 +549,33 @@ int main(int argc,char *argv[])
 	             ((real)tgrid.mx[XX] * DensUnit[nunit]);
 	if (tgrid.grid[i][j][k] <= min_occ) 
 	  hxyp[i][j] += 1.0/((real)tgrid.mx[ZZ] * DensUnit[eduUNITY]);
+
+
+	/* translate to coordinates centered on the axis and
+	   pointing to the center of the cell 
+           These are also needed for radial binning:
+        */
+	ci = ((real)i+0.5) - (real)tgrid.mx[XX]/2.0;
+	cj = ((real)j+0.5) - (real)tgrid.mx[YY]/2.0;
+
+        /* local density axial distribution function
+           the area is estimated as the 'radius of gyration' of the occupied 
+           cells 
+
+           Rgyr = sqrt( Sum_i,occ n(i,z)*r(i,z)^2 / Sum_i,occ n(i,z)  )
+              where r(i,z) is the distance from the center of the pore
+           Agyr = pi * Rgyr^2
+           
+           units of DeltaR for radius
+        */
+        
+        if (tgrid.grid[i][j][k] > min_occ) {
+          /* occupied cells per k-slice */
+          nocc++;          
+          lzdf[k][1] += tgrid.grid[i][j][k]; 
+          Agyr += tgrid.grid[i][j][k] * (ci*ci + cj*cj);
+        }
+
 
 	/* pore profile from volumes of z-slices 
 	   This is inexact if dV is so small that there are lots of
@@ -560,18 +589,10 @@ int main(int argc,char *argv[])
 	  /* multiply by dV later */
 	  volume++;        /* total number of occupied cells */
 	  profile[k][1]++;
-
-          nocc++;          /* occupied cells per k-slice */
-          lzdf[k][1] += tgrid.grid[i][j][k]; 
 	}
 
 	/* radial distributions */
 
-	/* translate to coordinates centered on the axis and
-	   pointing to the center of the cell 
-        */
-	ci = ((real)i+0.5) - (real)tgrid.mx[XX]/2.0;
-	cj = ((real)j+0.5) - (real)tgrid.mx[YY]/2.0;
 
 	/* radius in units DeltaR (really:
 	   sqrt((i*DX)^2+(j*DY)^2)/DeltaR but with the fixed setting
@@ -614,6 +635,7 @@ int main(int argc,char *argv[])
 
         */
 	zdf[k][1] += tgrid.grid[i][j][k];
+
       }
     }
     /* zdf --  z at the center of each cell --> +0.5 
@@ -642,9 +664,16 @@ int main(int argc,char *argv[])
                       
        (anyway, lzdf/(pi*iR^2 * f) works....)
 
+    lzdf[k][1] /= (PI*(real)(iradNR*iradNR)) * DensUnit[nunit];
+
+    --> effective area is A=pi*Agyr
+
      */
     lzdf[k][0] = zdf[k][0]; 
-    lzdf[k][1] /= (PI*(real)(iradNR*iradNR)) * DensUnit[nunit];
+    Agyr = Agyr/lzdf[k][1];
+    lzdf[k][2] = sqrt(Agyr)*DeltaR; /* Rgyr, nm */
+    Agyr *= PI;
+    lzdf[k][1] /= Agyr * DensUnit[nunit];
 
     /* pore profile (z, R*(z))  */
     profile[k][0] = tgrid.a[ZZ] + (k+0.5)*tgrid.Delta[ZZ];
@@ -837,8 +866,8 @@ int main(int argc,char *argv[])
 		       "Local density axial distribution function n\\slocal\\N(z)",
 		       header, "z [nm]", s_tmp);
   for(k=0;k<tgrid.mx[ZZ];k++) {
-    fprintf (fOut,"%.6f   %.6f\n",
-	     lzdf[k][0],lzdf[k][1]);
+    fprintf (fOut,"%.6f   %.6f   %.6f\n",
+	     lzdf[k][0],lzdf[k][1],lzdf[k][2]); /* z p(z)  rgyr(z) */
   };
   fclose(fOut);
 

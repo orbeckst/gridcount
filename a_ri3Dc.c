@@ -326,7 +326,7 @@ int main(int argc,char *argv[])
     { "-delta",  FALSE, etRVEC, {&(Delta)},
       "HIDDENSpatial resolution in X, Y, and Z for resampling (in nm)"},
     { "-minocc",   FALSE, etREAL, {&min_occ},
-      "The occupancy of a  cell must be larger than this number so that it is "
+      "HIDDENThe occupancy of a  cell must be larger than this number so that it is "
       "counted as occupied when calculating the volume, effective radius "
       "and local density axial distribution -lzdf. This is given in the chosen "
       "units (see -unit)."},
@@ -550,31 +550,12 @@ int main(int argc,char *argv[])
 	if (tgrid.grid[i][j][k] <= min_occ) 
 	  hxyp[i][j] += 1.0/((real)tgrid.mx[ZZ] * DensUnit[eduUNITY]);
 
-
 	/* translate to coordinates centered on the axis and
 	   pointing to the center of the cell 
            These are also needed for radial binning:
         */
 	ci = ((real)i+0.5) - (real)tgrid.mx[XX]/2.0;
 	cj = ((real)j+0.5) - (real)tgrid.mx[YY]/2.0;
-
-        /* local density axial distribution function
-           the area is estimated as the 'radius of gyration' of the occupied 
-           cells 
-
-           Rgyr = sqrt( Sum_i,occ n(i,z)*r(i,z)^2 / Sum_i,occ n(i,z)  )
-              where r(i,z) is the distance from the center of the pore
-           Agyr = pi * Rgyr^2
-           
-           units of DeltaR for radius
-        */
-        
-        if (tgrid.grid[i][j][k] > min_occ) {
-          /* occupied cells per k-slice */
-          nocc++;          
-          lzdf[k][1] += tgrid.grid[i][j][k]; 
-          Agyr += tgrid.grid[i][j][k] * (ci*ci + cj*cj);
-        }
 
 
 	/* pore profile from volumes of z-slices 
@@ -589,7 +570,32 @@ int main(int argc,char *argv[])
 	  /* multiply by dV later */
 	  volume++;        /* total number of occupied cells */
 	  profile[k][1]++;
+
+          /* local density axial distribution function
+             the area is estimated as the 'radius of gyration' of the occupied 
+             cells 
+
+             Rgyr = sqrt( Sum_i,occ n(i,z)*r(i,z)^2 / Sum_i,occ n(i,z)  )
+             where r(i,z) is the distance from the center of the pore
+             Agyr = pi * Rgyr^2
+           
+             units of DeltaR for radius
+          */
+        
+          /* occupied cells per k-slice (though Agyr could equally
+             calculated from ALL cells; empty grid cells don't have
+             any weight in the sum)
+          */
+          //if (tgrid.grid[i][j][k] > min_occ) {
+            nocc++;          
+            lzdf[k][1] += tgrid.grid[i][j][k]; 
+            /* shouldnt this be relative to the COM of the cells instead
+               of the centre of the pore ? */
+            Agyr += tgrid.grid[i][j][k] * (ci*ci + cj*cj);
+            // Agyr += 1.0 * (ci*ci + cj*cj);
+            //}
 	}
+
 
 	/* radial distributions */
 
@@ -623,11 +629,11 @@ int main(int argc,char *argv[])
 	    hrzp[irad][k]++; 
 	  }
 	}
-	/* axial distribution function zdf (normalise later) 
-           Note: this integrates square disks out and collapses them onto 
-                 the z-axis, NOT circles. (should be fixed) 
-                 The 'radius' determines the maximum grid dimensions ie length
-                 of the 'square disk'.
+	/* axial distribution function zdf (normalise later) Note:
+           this integrates square disks out and collapses them onto
+           the z-axis, NOT circles. (should be fixed) The 'radius' R
+           determines the maximum grid dimensions ie length of the
+           'square disk'.
 
            Could be fixed by moving it into the 'profile' loop but I
            leave it for consistency with previous calculations for the
@@ -644,37 +650,30 @@ int main(int argc,char *argv[])
     zdf[k][0]  = tgrid.a[ZZ] + (k+0.5)*tgrid.Delta[ZZ];
     zdf[k][1] /= (real)tgrid.mx[XX]*(real)tgrid.mx[YY] * DensUnit[nunit];
 
-    /* lzdf[k] * dV: avg number of particles in slice.
-       Divide by total area pi*R^2 that we looked at and multiply by dz:
+    /* 
+       ====================================
+       n(z) = Sum n(x,y,z) * dV / (A*dz)
+       ====================================
 
-       lzdf[k] * dV * dz / A == avg # particles per length dz
+       lzdf[k] * dV: avg number of particles in slice.
+       Divide by total area pi*R^2 * dz 
 
-       dV/(pi*R^2) = dx dy dz/(pi*(iradNR*deltaR)^2)
-           with deltaR == dx == dy
-       dz/(pi*iradNR^2)
-
-       --> n(z) = lzdf[k] * dz^2/(pi*iradNR^2)
-
-       occupied fraction: nocc/(PI*iradNR^2)
-
-       with units (conversion factor f=un/uV): dV = 1, dz = 1
-             uV  unit of volume
-             ux  unit of distance in x,y 
-       lzdf/f * dV = lzdf/un * uV* dV = N[k]/un * uV 
-                      
-       (anyway, lzdf/(pi*iR^2 * f) works....)
-
-    lzdf[k][1] /= (PI*(real)(iradNR*iradNR)) * DensUnit[nunit];
-
-    --> effective area is A=pi*Agyr
+      effective area is A=pi*Agyr
 
      */
     lzdf[k][0] = zdf[k][0]; 
-    Agyr = Agyr/lzdf[k][1];
-    lzdf[k][2] = sqrt(Agyr)*DeltaR; /* Rgyr, nm */
-    Agyr *= PI;
-    lzdf[k][1] /= Agyr * DensUnit[nunit];
+    Agyr /= lzdf[k][1]/2.0;    /* normalisation; 1/2 from comparison with const density CHEATING */
+    lzdf[k][2] = sqrt(Agyr)*DeltaR; /* Rgyr, nm  */
+    Agyr *= PI;     
 
+    /* dV/(Delta[ZZ]*sqr(DeltaR) ~= 1 */
+    lzdf[k][1] = lzdf[k][1]*dV/(tgrid.Delta[ZZ]*Agyr*DeltaR*DeltaR * DensUnit[nunit]);
+#ifdef DEBUG
+      printf("[k=%d] dV=%g dz=%g dr=%g nocc=%d Rgyr=%g Rgyr/R=%g Agyr=%g nm^2 Agyr=%g\n",
+             k,
+             dV,tgrid.Delta[ZZ],DeltaR,nocc,
+             lzdf[k][2], lzdf[k][2]/geometry.radius, Agyr*DeltaR*DeltaR, Agyr);
+#endif
     /* pore profile (z, R*(z))  */
     profile[k][0] = tgrid.a[ZZ] + (k+0.5)*tgrid.Delta[ZZ];
     profile[k][1] = sqrt(profile[k][1]*dV/(PI*tgrid.Delta[ZZ]));
@@ -866,8 +865,9 @@ int main(int argc,char *argv[])
 		       "Local density axial distribution function n\\slocal\\N(z)",
 		       header, "z [nm]", s_tmp);
   for(k=0;k<tgrid.mx[ZZ];k++) {
-    fprintf (fOut,"%.6f   %.6f   %.6f\n",
-	     lzdf[k][0],lzdf[k][1],lzdf[k][2]); /* z p(z)  rgyr(z) */
+    fprintf (fOut,"%.6f   %.6f   %.6f  %.6f\n",
+	     lzdf[k][0],lzdf[k][1],lzdf[k][2],lzdf[k][2]/geometry.radius); 
+             /* z p(z)  rgyr(z) rgyr(z)/R */
   };
   fclose(fOut);
 

@@ -857,13 +857,13 @@ int main(int argc,char *argv[])
   */
 
   /* (1) axial distribution P(z) */
-  snprintf(s_tmp,STRLEN,"n(z) [%s]",EDENSUNITTYPE(nunit));
+  snprintf(s_tmp,STRLEN,"n(z) [%s], PMF G(z)/kT",EDENSUNITTYPE(nunit));
   fOut = xmgropen (opt2fn("-zdf",NFILE,fnm),
 		       "Axial distribution function n(z)",
 		       header, "z [nm]", s_tmp);
   for(k=0;k<tgrid.mx[ZZ];k++) {
-    fprintf (fOut,"%.6f   %.6f\n",
-	     zdf[k][0],zdf[k][1]);
+    fprintf (fOut,"%.6f   %.6f   %.6f\n",
+	     zdf[k][0],zdf[k][1],-log(zdf[k][1]));
   };
   fclose(fOut);
 
@@ -872,10 +872,11 @@ int main(int argc,char *argv[])
 		       "Local density axial distribution function n\\slocal\\N(z)",
 		       header, "z [nm]", s_tmp);
   for(k=0;k<tgrid.mx[ZZ];k++) {
-    fprintf (fOut,"%.6f   %.6f  %.6f\n",
+    fprintf (fOut,"%.6f   %.6f  %.6f  %.6f\n",
 	     lzdf[k][0],lzdf[k][1],
-             lzdf[k][1]/(1+sqr(rsolvent/profile[k][1]))); 
-             /* z  n(z) n'(z) 
+             lzdf[k][1]/(1+sqr(rsolvent/profile[k][1])),
+	     -log(lzdf[k][1]) ); 
+             /* z  n(z) n'(z) G(z)/kT
               where n'(z) = N(z)/pi*(Rgyr+r)^2 with r: radius of solvent */
   };
   fclose(fOut);

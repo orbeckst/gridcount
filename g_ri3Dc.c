@@ -215,6 +215,7 @@ int main(int argc,char *argv[])
   };
 
   static char *bugs[] = {
+    "Not tested with non-orthogonal boxes; it might break for triclinic boxes",
     "The program guarantees to use the user supplied grid spacing. "
     "If the other "
     "dimensions are incommensurable with Delta they are changed to comply.",
@@ -241,7 +242,7 @@ int main(int argc,char *argv[])
     0, 0,                 /* z1 < z2 */
     0                     /* volume - calculate later */
   };
-  static rvec Delta = {0.02, 0.02, 0.02}; /* spatial resolution in nm */
+  static rvec Delta = {0.05, 0.05, 0.05}; /* spatial resolution in nm */
   static char buf[HEADER_MAX];        /* additional text for graphs */
   static char *header = buf;          
 

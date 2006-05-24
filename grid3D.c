@@ -99,6 +99,7 @@ bool grid_read (FILE *fp,t_tgrid *tg,char *header) {
   if(! (tg->grid=grid3_unserialise(xg.grid,xg.size))) 
     fatal_error(0,"grid_write(): Cannot allocate memory for grid "
 		"un-serialisation.\n");
+  tg->tweight = xg.tweight; /* should do this with pointer */
 
   xdr_destroy(&xdrs);
   return TRUE;

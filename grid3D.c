@@ -70,10 +70,11 @@ bool grid_read (FILE *fp,t_tgrid *tg,char *header) {
 
   xdrstdio_create (&xdrs, fp, XDR_DECODE);
   if (! xdr_grid(&xdrs,&xg)) {  
-    msg("grid_read(): XDR read failed.\n");
+    msg("grid_read(): XDR read failed "
+	"(probably file format incompatible, try -debug).\n");
     return FALSE;
   }; 
-  if (abs(xg.version) > abs(GRID_FF_VERSION)) 
+  if (xg.version > GRID_FF_VERSION) 
     msg("WARNING: grid was WRITTEN with version %d, but is READ "
 	"with version %d\n",
 	xg.version, GRID_FF_VERSION);

@@ -20,6 +20,7 @@
                                format change in the future)
   HEADER    str[HEADER_MAX]  # descriptive txt
   GRIDTYPE  enum             # currently we only have regular grids
+  TWEIGHT   real             # length of simulation time (ps) for the data
   DIMENSION int              # dim of array
   SIZE      int int ...      # number of cells per dim  \
   DELTA     real real ...    # grid width per dim        } allows reconstruction 
@@ -65,6 +66,8 @@ typedef struct {
   int  mx[3];      /* MX, MY, MZ */
   real a[3], b[3]; /* bottom left and top right corner of the grid in nm */ 
   rvec Delta;      /* spatial resolution in nm */
+  real tweight;    /* length of simulation time (ps) for data; used as a */
+                   /* weight for combining grids in grid_calc.c */
 } t_tgrid;
 
 typedef struct {

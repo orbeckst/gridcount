@@ -26,6 +26,7 @@ bool grid_write (FILE *fp,t_tgrid *tg,char *header) {
   xg.version = GRID_FF_VERSION;
   xg.header  = header;
   xg.type    = egtyREGULAR;
+  xg.tweight = tg->tweight;
   xg.dim     = 3;
   xg.size    = tg->mx;
   xg.delta   = tg->Delta;
@@ -82,6 +83,7 @@ bool grid_read (FILE *fp,t_tgrid *tg,char *header) {
 
   dmsg("Version (file) %d\n",xg.version);
   dmsg("GridType   %s\n",GRIDTYPE(xg.type));
+  dmsg("Tweight    %g ps\n",xg.tweight);
   dmsg("Dimension  %d\n",xg.dim);
   dmsg("Size       ");
   for(i=0;i<xg.dim;i++) dmsg("%5d ", xg.size[i]);

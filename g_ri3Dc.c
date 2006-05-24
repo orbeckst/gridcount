@@ -358,7 +358,7 @@ int main(int argc,char *argv[])
   main loop over frames
 */
   sumP = 0;       /* sum_xyz P(x,y,z) */
-  T_tot = 0;
+  T_tot = 0;      /* total simulation time for this data set (ps?) */
   do {
     dt = t - tlast;
     tlast = t;
@@ -406,7 +406,7 @@ int main(int argc,char *argv[])
 	for(j=0;j<tgrid.mx[YY];j++)
 	  tgrid.grid[i][j][k] /= (dV*T_tot);
   }
-  
+  tgrid.tweight = (real)T_tot;
 
   strcpy(s_tmp,header);
   snprintf (header, HEADER_MAX,

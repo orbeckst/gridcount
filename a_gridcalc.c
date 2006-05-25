@@ -101,9 +101,7 @@ int main(int argc,char *argv[])
   t_tgrid *tgrids;        /* all information about the input grids */
 
   int i,j,k, ifile;
-  double dV;        /* volume of a cell */
-  real sumT;        /* total time for data (ps) */
-  real volume = 0;
+  double sumT=0, w;   /* total time for data (ps), and weight of a data set */
 
   char s_tmp[STRLEN];        /* utility buffer, sprintf on the fly */
 
@@ -145,7 +143,7 @@ int main(int argc,char *argv[])
     msg("Tweight = %g ps\n",tgrids[ifile].tweight);
     msg("mx = %d %d %d\n",tgrids[ifile].mx[XX],tgrids[ifile].mx[YY],tgrids[ifile].mx[ZZ]);
 
-    sumT += tgrids[ifile].tweight;
+    sumT += (double)tgrids[ifile].tweight;
     dmsg("sumT[%d] = %g\n",ifile,sumT);
     msg(".. done!\n");
   }
@@ -164,7 +162,7 @@ int main(int argc,char *argv[])
     a->b[i]  = g->b[i];
   }
   copy_rvec(g->Delta,a->Delta);
-  a->tweight = sumT;   /* store total time in final result */
+  a->tweight = (real)sumT;   /* store total time in final result */
   a->grid = grid3_alloc(a->mx[XX],a->mx[YY],a->mx[ZZ]);
 
   /* quick results are needed: hard code the averaging */
@@ -175,11 +173,12 @@ int main(int argc,char *argv[])
 
   for(ifile=0;ifile<nfile;ifile++) {
     g = &tgrids[ifile];
-    g->tweight = g->tweight/sumT;    /* ATTENTION: changed the input data */
+    w = (double)(g->tweight)/sumT;
+    g->tweight = (real)w;         /* ATTENTION: changed the input data */
     for(k=0;k<g->mx[ZZ];k++) 
       for(j=0;j<g->mx[YY];j++) 
 	for(i=0;i<g->mx[XX];i++) {
-	  a->grid[i][j][k] += g->grid[i][j][k] * g->tweight;
+	  a->grid[i][j][k] += g->grid[i][j][k] * w;
 	}
   }
   

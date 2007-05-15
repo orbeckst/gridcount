@@ -110,6 +110,7 @@ static char *SRCID_g_ri3Dc_c = "$Id$";
 #include "mshift.h"
 #include "gstat.h"
 #include "names.h"
+#include "fatal.h"
 #include "gridcount.h"
 
 void init_t_result (t_result *, t_tgrid *, real **, real **, real **);
@@ -164,12 +165,12 @@ static real get_timestep(char *fnm)
   
   ok=read_first_frame(&status,fnm,&fr,TRX_NEED_X);
   if(!ok || !fr.bTime)
-    fatal_error(0,"\nCouldn't read time from first frame.");
+    gmx_fatal(FARGS,"\nCouldn't read time from first frame.");
   t0=fr.time;
     
   ok=read_next_frame(status,&fr);
   if(!ok || !fr.bTime) 
-    fatal_error(0,"\nCouldn't read time from second frame.");
+    gmx_fatal(FARGS,"\nCouldn't read time from second frame.");
   dt=fr.time-t0;
 
   close_trj(status);
@@ -328,7 +329,7 @@ int main(int argc,char *argv[])
 	 "using \ntheir center of mass.\n");
     snew (molndx, mols->nr);
     if ( (gnmol = mols_from_index (index, gnx, mols, molndx, mols->nr)) < 0) {
-      fatal_error (1, "Error: could not find  molecules.\n");
+      gmx_fatal(FARGS, "Error: could not find  molecules.\n");
     };
     msg ("%-10s%10s%10s\n", "Group", "Molecules", "Atoms");
     msg ("%-10s%10d%10d\n", grpname,  gnmol, gnx);
@@ -351,7 +352,7 @@ int main(int argc,char *argv[])
 
   /*  setup grid  */
   if (!setup_tgrid (&tgrid, &cavity, Delta)) 
-    fatal_error (-1,"FAILED: setup_tgrid()\n");
+    gmx_fatal(FARGS,"FAILED: setup_tgrid()\n");
 
 
 /*

@@ -2,7 +2,7 @@
 #
 # GNU Makefile to compile the grid counter outside the Gromacs source tree
 #
-#   Copyright (C) 2003, 2004 Oliver Beckstein <oliver@biop.ox.ac.uk>
+#   Copyright (C) 2003-2007 Oliver Beckstein <orbeckst@jhmi.edu>
 #   This program is made available under the terms of the GNU Public License. 
 #   See the file COPYING or http://www.gnu.org/copyleft/gpl.html
 #
@@ -15,12 +15,14 @@
 #
 #  DEBUG        compile with debugging, -g and no optimisations
 
-GMX_TOP_DIR     := /usr/local/gromacs
+# Set GMX_TOP_DIR to your Gromacs installation and check the
+# INCLUDE and LIB dir.
+GMX_TOP_DIR     := $(HOME)/Gromacs/3.3.1
 
 # EXEC depends on your machine/OS
-GMX_EXEC_PREFIX := $(GMX_TOP_DIR)/i686-pc-linux-gnu#
+GMX_EXEC_PREFIX := $(GMX_TOP_DIR)/#
 GMX_LIB_DIR     := $(GMX_EXEC_PREFIX)/lib#
-GMX_INCLUDE_DIR := $(GMX_TOP_DIR)/include#
+GMX_INCLUDE_DIR := $(GMX_TOP_DIR)/include/gromacs#
 
 # install binaries into
 BIN_DIR := $(GMX_EXEC_PREFIX)/bin
@@ -38,7 +40,7 @@ GMX_SOURCE_DIR  := /usr/local/src/gmx
 #
 NAME     := gridcount#
 RELEASE  := 1#
-MINOR    := 0#
+MINOR    := 1#
 
 CPPFLAGS += -I$(GMX_INCLUDE_DIR)
 
@@ -74,7 +76,13 @@ A_RI3DC_SRC := a_ri3Dc.c
 A_RI3DC_H   := 
 A_RI3DC_OBJ := a_ri3Dc.o
 
-ALL_PROG := $(G_RI3DC) $(A_RI3DC)
+# a_gridcalc
+A_GRIDCALC     := a_gridcalc 
+A_GRIDCALC_SRC := a_gridcalc.c 
+A_GRIDCALC_H   := 
+A_GRIDCALC_OBJ := a_gridcalc.o
+
+ALL_PROG := $(G_RI3DC) $(A_RI3DC) $(A_GRIDCALC)
 
 DIST_GRIDCOUNT_H   := $(sort  $(A_RI3DC_H) $(G_RI3DC_H) $(LIBGC_H))
 DIST_GRIDCOUNT_SRC := $(sort  $(A_RI3DC_SRC) $(G_RI3DC_SRC) $(LIBGC_SRC))
@@ -133,6 +141,7 @@ help:
 
 
 $(LIBGC): $(LIBGC)($(LIBGC_OBJ)) $(LIBGC_H)
+	ranlib $@
 
 $(G_RI3DC): $(G_RI3DC_OBJ) $(LIBGC)
 	$(LD) -o $@ $^ $(LDFLAGS)
@@ -144,6 +153,11 @@ $(A_RI3DC): $(A_RI3DC_OBJ) $(LIBGC)
 $(A_RI3DC_OBJ): $(A_RI3DC_SRC) $(A_RI3DC_H)
 
 
+$(A_GRIDCALC): $(A_GRIDCALC_OBJ) $(LIBGC) 
+	$(LD) -o $@ $^ $(LDFLAGS)
+$(A_GRIDCALC_OBJ): $(A_GRIDCALC_SRC) $(A_GRIDCALC_H)
+
+
 TAGS: $(ALL_SOURCES)
 	etags *.c *.h 
 	find $(GMX_SOURCE_DIR) -name '*.[ch]' | xargs etags --append 
@@ -151,7 +165,7 @@ TAGS: $(ALL_SOURCES)
 
 .PHONY: clean distclean tar-clean install dist
 
-install:  $(G_RI3DC) $(A_RI3DC)
+install:  $(G_RI3DC) $(A_RI3DC) $(A_GRIDCALC)
 	for p in $^; do \
 	    if [ -e $$p ]; then  \
 	       echo ">>> Installing file \`$$p' ..."; \

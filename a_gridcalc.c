@@ -126,7 +126,7 @@ int main(int argc,char *argv[])
   /* read in multiple xdr files */
   nfile = opt2fns(&fnms,"-f",NFILE,fnm);
   if(!nfile)
-      fatal_error(0,"No input files!");
+      gmx_fatal(FARGS,"No input files!");
 
   /* alloc array of tgrids; grid number nfile is the result */
   snew(tgrids,nfile+1);
@@ -136,7 +136,7 @@ int main(int argc,char *argv[])
     msg("Reading grid 3D file %s\n", fnms[ifile]);
     fGrid    = ffopen (fnms[ifile], "r");
     if (!grid_read(fGrid,&tgrids[ifile],header)) 
-      fatal_error(0,"Error reading the 3D grid---no point in continuing!\n");
+      gmx_fatal(FARGS,"Error reading the 3D grid---no point in continuing!\n");
     fclose(fGrid);
     update_tgrid(&tgrids[ifile]);
 

@@ -33,7 +33,7 @@ bool grid_write (FILE *fp,t_tgrid *tg,char *header) {
   xg.origin  = tg->a;
   
   if(! (xg.grid=grid3_serialise(tg->grid,tg->mx))) 
-    fatal_error(0,"grid_write(): Cannot allocate memory for grid "
+    gmx_fatal(FARGS,"grid_write(): Cannot allocate memory for grid "
 		"serialisation.\n");
 
   xdrstdio_create (&xdrs, fp, XDR_ENCODE);
@@ -79,7 +79,7 @@ bool grid_read (FILE *fp,t_tgrid *tg,char *header) {
 	"with version %d\n",
 	xg.version, GRID_FF_VERSION);
   if (xg.dim != 3)                       /* see CAVEAT above */
-    fatal_error(0,"grid_read(): The data file appears to have dim=%d, but this \n"
+    gmx_fatal(FARGS,"grid_read(): The data file appears to have dim=%d, but this \n"
 	          "             routine can only read 3D grids.\n",xg.dim); 
 
   dmsg("Version (file) %d\n",xg.version);
@@ -97,7 +97,7 @@ bool grid_read (FILE *fp,t_tgrid *tg,char *header) {
   dmsg("\n");
   
   if(! (tg->grid=grid3_unserialise(xg.grid,xg.size))) 
-    fatal_error(0,"grid_write(): Cannot allocate memory for grid "
+    gmx_fatal(FARGS,"grid_write(): Cannot allocate memory for grid "
 		"un-serialisation.\n");
   tg->tweight = xg.tweight; /* should do this with pointer */
 

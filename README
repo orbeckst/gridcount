@@ -1,6 +1,6 @@
 $Id$
 Grid counter g_ri3Dc and analysis tool a_ri3Dc
-Copyright (C) 2004 Oliver Beckstein <oliver@biop.ox.ac.uk>
+Copyright (C) 2003-2007 Oliver Beckstein <orbeckst@jhmi.edu>
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -46,6 +46,11 @@ It outputs 1D graphs (can be displayed with xmgrace
 http://plasma-gate.weizmann.ac.il/Grace/) and 2D data and parameter
 files which are suitable for xfarbe (A. Preusser,
 http://www.fhi-berlin.mpg.de/~grz/pub/xfarbe.html).
+
+a_gridcalc can be used to average densities. The plan is to extend it
+into a more versatile grid calculator (but then again, it may be
+easier using numeric python, dx, or any other software already written
+for such purposes.)
 
 As an example I added a Makefile (examples/Makefile.grid) that I use
 to create a whole bunch of graphics, including eps from the 2D plots
@@ -94,7 +99,7 @@ BUGs and such
 =============
 
 * Feel free to send feedback to Oliver Beckstein
-  <oliver@biop.ox.ac.uk>
+  <orbeckst@jhmi.edu>
 
 * Problems during compilation/installation: see INSTALL
 
@@ -135,3 +140,6 @@ TODO
 
 * Probably more code cleanup.
 
+* The native density format should be something like OpenDX because
+  then it woukld be more interoperable and easier to manipulate with
+  existing tools.

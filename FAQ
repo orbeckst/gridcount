@@ -1,0 +1,244 @@
+Gridcount (from SBCBWiki, retrieved 2007-05-15)
+
+Some quick notes on the gridcount tools, available from Oli's software
+page (http://sbcb.bioch.ox.ac.uk/oliver/software/#gridcount).
+
+Table of contents
+0 Overview 
+1 FAQ
+1.1 peptide
+1.2 non-orthorhombic boxes
+2 Examples
+2.1 Averages of umbrella-sampled densities
+
+------------------------------------------------------------
+
+0 Overview
+
+g_ri3Dc 
+
+    bin positions of molecules (such as an index group of water
+    molecules or ions or fatty acid headgroups) on a 3D grid during a
+    trajectory. Write to a data file.
+
+a_ri3Dc 
+
+    analyse the data file and make 2D and 1D projections of the
+    density that can be viewed with xfarbe or xmgrace.  
+
+a_gridcalc
+
+    manipulate a collection of densities; at the moment the only
+    function is averaging them. (Note: this requires the latest
+    version (in the rel-3-2-1-umbrella branch with grid file format 2)
+
+
+
+1 FAQ
+1.1 peptide
+
+Q:  I am contacting you with a question regarding the rendering in 3D
+    of the densities obtained with your program gridcount. In
+    particular, with VMD, I would like to obtain a superposition of
+    the water density with the pdb structure (corresponding to the
+    reference structure I have been using for gridcount calculations)
+    of the peptide I am studying. However, the coordinates of the
+    peptide and the density do not seem to match. Am I
+    mis-interpreting something, or could you give some advice on that?
+
+Without any more details or a picture it's a bit hard to tell but I'll
+just mention some of the typical problems and limitations.
+
+The most important thing is to have a trajectory that has the solute
+(your peptide) stationary at a fixed position. gridcount is really
+dumb in that it just places a fixed grid across the box and counts
+what is in each cell of the grid. If the solute moves through the grid
+then you get a washed out density.
+
+So, what other people needed to do (thanks to Shiva and John) was
+preparing a trajectory for analysis, often using multiple steps of
+trjconv. From memory: Start with your output from md, call it md.xtc
+
+   1.
+
+      trjconv  -pbc nojump  -f md.xtc -o nojump.xtc
+
+      makes the protein whole if it got broken and fit to starting
+      frame (hopefully this one isn't broken)
+
+   2.
+
+      trjconv -fit rot+trans -f nojump.xtc -o fit.xtc
+
+      system now fitted to protein and protein stationary in the box;
+      fit to initial frame
+
+   3.
+
+      trjconv -pbc inbox -f fit.xtc -o grid.xtc
+
+      put all molecules back in the box
+
+Then run
+
+g_ri3Dc -f grid.xtc ...
+
+At least around the protein you should see proper density, eg water at
+bulk density. At the edges the density will be lower because your box
+edges will rotate through the grid and on some frames there will be
+cells which are 'outside' the box. Remember that the grid is defined
+on the initial frame.
+
+In order to debug gridcounting issues you need to remeber that
+
+    * the algorithm is very simple (just count inside cells)
+    * the cells (the grid) is fixed and defined at the initial frame 
+
+As such, changes in box size, movement of the solute etc all affect the density.
+
+
+1.2 non-orthorhombic boxes
+
+Q:   I am trying to use your gridcount utilities for analysing Gromacs
+     3.3. trajectories but I didn't succeed yet :-(.
+
+I can imagine, it's not very intuitive, I'm afraid.
+
+    There are several questions:
+
+       1. Is there any version of gridcount utilities which is ported
+          for Gromax 3.3.? Due to several changes in bpc treatment
+          functions - I wasn't able to complit it with 3.3
+          distribution.
+
+       2. When I compiled this program with 3.2.1 distribution it
+          works but produces some strange results. F. e. when I
+          analysed a mixture of water and salts - it produced zero
+          density for salts (they are exist!!!)
+
+The most likely cause is that for ions you need the -nom flag (if I
+remember correctly); otherwise the ions aren't counted at all. It's
+somehow related to the fact that I can't properly calculate a centre
+of mass on residues with only one atom.
+
+    and quite strange results for water - the distribution is not
+    uniform as it should be (I've checked it by another methods).
+
+I never tested it with anything else than with cubic boxes; in fact it
+places a rectangular grid accross your box, with initial lengths of
+the grid taken from the first frame. You might have to preprocess your
+trajectory so that all molecules are in the box; I attach a mini FAQ.
+
+    I mean - the results show that there are almost empty spaces in
+    the box which is not true - these are test simulations of
+    electrolyte 1M solution, 1 atm, 300 k.
+
+If these spaces are on the edge then this is most likely your box shape.
+
+    The density is pretty uniform - I've cheked it by g_density and
+    g_densmap to be 100% sure.
+
+
+Good idea!
+
+    So, I have a couple proposals:
+
+       1. May be the 3.3. topolgies are slightly inconsistent with old
+          format which you are using in these programs.
+
+       2. I am using the dodecahedron box - may be your programs just
+          don't like such type of box.
+
+1. Don't know, haven't checked, but will look out for it when I
+   find the time.  
+
+2. This is VERY likely.
+
+I wrote the code on a long weekend to analyse cylindrical pores that
+were at a fixed orientation. Hence there are some built-in limitations
+in what the code can do. For most other things you need to get the
+trajectory 'right' before running g_ri3Dc.
+
+In particular, it helps to know how simple the algorithm of gridcount
+is:
+
+   1. read initial frame, get the lengths of the brick-shaped box (so
+      problems with anything that hasn't got 90 angles for the cell)
+
+   2. place a grid over the initial cell, using dx, dy, dz as
+      spacings. This defines the bins of a 3D histogram.
+
+   3. for each frame, calculate the bin a atom is in: as simple as
+      int(x/dx), int(y/dy), int(z/dz). For instance, if your box
+      increased in size later you will have atoms ending up in bins
+      that were never defined, and which are silently discarded by
+      gridcount. I calculate a variety of sums over the trajectory,
+      and there is one that should be close to the number of atoms in
+      your index group. If it's smaller then that means that sometimes
+      atoms were placed outside the initial grid (and discarded).
+
+   4. at the end, normalise the count in each bin to give a
+      probability (or a density relative to some value such as spc
+      bulk, see the options)
+
+
+Also, by default you give one atom per residue in the index
+file. gridcount finds the residue and computes the centre of mass and
+bins the centre of mass (that's -m); this works well with OW in the
+index and counting the centre of mass of each water molecule. For
+ions, it doesn't work and you need -nom.
+
+For protein densities, eg the backbone, you need an index file with
+the backbone atoms and -nom.
+
+
+2 Examples
+2.1 Averages of umbrella-sampled densities
+
+If you were smart enough to safe trajectories for each umbrella window
+you can analyse the density:
+
+   1. run gridcount g_ri3Dc with an index file that excludes the
+      sampled particle
+
+   2. average all grids (they must have the same dimensions but can
+      have differing run lengths) using a_gridcalc
+
+For Oli's standard umbrella setup these tasks are automated in
+examples/window_density.pl.
+
+Glueing it all together:
+
+------------------------------------------------------------
+#!/bin/bash
+
+SPECIES=NA  # NA CL SOL
+DELTA=0.05
+
+#source /packages/opt/gromacs/3.2.1/x86_64-unknown-linux-gnu/bin/GMXRC
+source /users/oliver/Gromacs/3.2.1-umbrella/x86_64-unknown-linux-gnu/bin/GMXRC
+
+find . -name '*.tpr' | sed "/no_confinement/d" > tpr.list
+
+for t in $(cat tpr.list); do
+  echo "[$t]"
+  nice -n 15 ~/Gromacs/Scripts/window_density.pl $t $SPECIES $DELTA
+done
+
+XDR=${SPECIES}xdr.dat
+AVG=avg${SPECIES}.dat
+find . -name ${XDR} | sed "/no_confinement/d" > xdr.list
+
+echo "Created "$(wc --lines xdr.list)" grid files ${XDR}."
+echo "Average ${AVG}..."
+
+xargs a_gridcalc -o ${AVG} -f < xdr.list
+
+a_ri3Dc -grid ${AVG} -unit molar -xfarbe-maxlevel 4.5
+------------------------------------------------------------
+
+
+Note: In order to average densities one has to weight them. The weight
+used in this case is the simulation run length (in ps) of the
+trajectory from which the density was computed. The latest version of
+g_ri3Dc adds this information to the density file.

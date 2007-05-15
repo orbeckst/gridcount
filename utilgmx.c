@@ -46,16 +46,16 @@ real ***grid3_alloc(const int nx,const int ny,const int nz) {
 
   /* allocate a row of 'ptr to ptr to rows' (= index by x values), length nx */
   snew(g,nx);
-  if (!g) fatal_error(-1,"grid3_alloc(): Cannot allocate memory for nx=%d\n",nx);
+  if (!g) gmx_fatal(FARGS,"grid3_alloc(): Cannot allocate memory for nx=%d\n",nx);
   
   /* allocate nx 'ptrs to rows' (length ny each) and set ptrs to them */
   snew(g[0],nx*ny);
-  if (!g) fatal_error(-1,"grid3_alloc(): Cannot allocate memory for nx*ny=%d*%d\n",
+  if (!g) gmx_fatal(FARGS,"grid3_alloc(): Cannot allocate memory for nx*ny=%d*%d\n",
 		      nx,ny);
     
   /* allocate nx*ny 'rows' (length nz each; these memory locations hold the reals) */
   snew(g[0][0],nx*ny*nz);
-  if (!g) fatal_error(-1,"grid3_alloc(): Cannot allocate memory for data "
+  if (!g) gmx_fatal(FARGS,"grid3_alloc(): Cannot allocate memory for data "
 		      "(nx*ny*nz=%d*%d%d)\n",nx,ny,nz);
 
   /* initialise all pointers (starting from the already initialised
@@ -96,11 +96,11 @@ real **grid2_alloc(const int nx,const int ny) {
 
   /* allocate a row of 'ptr to ptr to rows' (= index by x values), length nx */
   snew(g,nx);
-  if (!g) fatal_error(-1,"grid2_alloc(): Cannot allocate memory for nx=%d\n",nx);
+  if (!g) gmx_fatal(FARGS,"grid2_alloc(): Cannot allocate memory for nx=%d\n",nx);
   
   /* allocate nx 'ptrs to rows' (length ny each) and set ptrs to them */
   snew(g[0],nx*ny);
-  if (!g) fatal_error(-1,"grid2_alloc(): Cannot allocate memory for nx*ny=%d*%d\n",
+  if (!g) gmx_fatal(FARGS,"grid2_alloc(): Cannot allocate memory for nx*ny=%d*%d\n",
 		      nx,ny);
 
   for(i=1;i<nx;i++) g[i]=g[i-1]+ny;

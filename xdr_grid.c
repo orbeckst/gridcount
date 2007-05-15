@@ -60,7 +60,7 @@ bool xdr_grid (XDR *xdrs, t_XDRgrid *xg) {
     return xdr_grid_v2(xdrs, xg);
     break;
   default:
-    fatal_error(0,"xdr_grid(): unknown version %d of the grid file format",version);
+    gmx_fatal(FARGS,"xdr_grid(): unknown version %d of the grid file format",version);
   }
 }
 

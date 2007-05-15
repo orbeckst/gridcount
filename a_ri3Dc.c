@@ -163,7 +163,7 @@ bool readjust_tgrid(t_tgrid *tg,t_cavity *g,int npa,t_pargs pa[]) {
   }
   /* sanity check .. post mortem ? */
   if (tg->a[ZZ] >= tg->b[ZZ]) 
-    fatal_error(0, "FAILURE: Apparently z2 =< z1, or either of them was too large "
+    gmx_fatal(FARGS, "FAILURE: Apparently z2 =< z1, or either of them was too large "
 		"for the given grid.");
 
   tgrid2cavity(tg,g);  /* overwrite radius from grid, finally set z1 
@@ -185,7 +185,7 @@ bool readjust_tgrid(t_tgrid *tg,t_cavity *g,int npa,t_pargs pa[]) {
      (2) copy pieces of the old grid into the new one
   */
   if (!setup_tgrid(tg,g,old.Delta))
-    fatal_error(0,"FAILURE while readjusting the grid.\n");
+    gmx_fatal(FARGS,"FAILURE while readjusting the grid.\n");
   
   /* Base = ((old.a - new->a)/Delta) -- beware rounding errors? */
   for(i=XX;i<DIM;i++) {
@@ -469,7 +469,7 @@ int main(int argc,char *argv[])
   msg("Reading grid 3D file...\n");
   fGrid    = ffopen (opt2fn("-grid", NFILE, fnm), "r");
   if (!grid_read(fGrid,&tgrid,header)) 
-    fatal_error(0,"Error reading the 3D grid---no point in continuing!\n");
+    gmx_fatal(FARGS,"Error reading the 3D grid---no point in continuing!\n");
   update_tgrid(&tgrid);
   fclose(fGrid);
   msg(".. done!\n");
@@ -490,7 +490,7 @@ int main(int argc,char *argv[])
   if (!(xyp=grid2_alloc(tgrid.mx[XX],tgrid.mx[YY])) ||
       !(xzp=grid2_alloc(tgrid.mx[XX],tgrid.mx[ZZ])) ||
       !(yzp=grid2_alloc(tgrid.mx[YY],tgrid.mx[ZZ])))
-    fatal_error (-1,"FAILED: allocating memory for the projection maps\n");
+    gmx_fatal(FARGS,"FAILED: allocating memory for the projection maps\n");
 
   /* setup axial distribution (zdf) and profile  
      We are wasting memory because the x-column is identical for all of them
@@ -499,24 +499,24 @@ int main(int argc,char *argv[])
   if (! (zdf=grid2_alloc(tgrid.mx[ZZ],2)) ||
       ! (lzdf=grid2_alloc(tgrid.mx[ZZ],2)) ||
       ! (profile=grid2_alloc(tgrid.mx[ZZ],2)))
-    fatal_error (-1,"FAILED: allocating memory for the axial "
+    gmx_fatal(FARGS,"FAILED: allocating memory for the axial "
 		 "distribution functions or the profile\n");
 
   /* setup radial distributions (rdf and rzprojection)   */
   iradNR = (int)floor(geometry.radius/DeltaR);
   snew(rweight,iradNR);
   if (!rweight || !(rdf=grid2_alloc(iradNR,2)))
-    fatal_error (-1,"FAILED: allocating memory for the radial "
+    gmx_fatal(FARGS,"FAILED: allocating memory for the radial "
 		 "distribution function\n");
 	
   if (!(rzp=grid2_alloc(iradNR,tgrid.mx[ZZ])))
-    fatal_error (-1,"FAILED: allocating memory for the rz projection map\n");
+    gmx_fatal(FARGS,"FAILED: allocating memory for the rz projection map\n");
 
   /* hole distributions */
   if (!(hrdf=grid2_alloc(iradNR,2)) || 
       !(hrzp=grid2_alloc(iradNR,tgrid.mx[ZZ])) ||
       !(hxyp=grid2_alloc(tgrid.mx[XX],tgrid.mx[YY])))
-    fatal_error(-1,"FAILED: allocating memory for the hole distributions\n");
+    gmx_fatal(FARGS,"FAILED: allocating memory for the hole distributions\n");
 
   /* for the volume calculation only look at cells within the circle
      of the original radius so that a comparison between this radius

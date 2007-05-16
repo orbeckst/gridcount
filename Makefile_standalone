@@ -41,6 +41,7 @@ GMX_SOURCE_DIR  := ~/Biop/Library/Gromacs/code/source/gromacs-3.3.1/src/
 NAME     := gridcount#
 RELEASE  := 1#
 MINOR    := 1#
+REVISION := 1#
 
 CPPFLAGS += -I$(GMX_INCLUDE_DIR)
 
@@ -84,14 +85,17 @@ A_GRIDCALC_OBJ := a_gridcalc.o
 
 ALL_PROG := $(G_RI3DC) $(A_RI3DC) $(A_GRIDCALC)
 
-DIST_GRIDCOUNT_H   := $(sort  $(A_RI3DC_H) $(G_RI3DC_H) $(LIBGC_H))
-DIST_GRIDCOUNT_SRC := $(sort  $(A_RI3DC_SRC) $(G_RI3DC_SRC) $(LIBGC_SRC))
+DIST_GRIDCOUNT_H   := $(sort  $(A_RI3DC_H) $(A_GRIDCALC_H) \
+	$(G_RI3DC_H) $(LIBGC_H))
+DIST_GRIDCOUNT_SRC := $(sort  $(A_RI3DC_SRC) $(A_GRIDCALC_SRC) \
+	$(G_RI3DC_SRC) $(LIBGC_SRC))
 DIST_GRIDCOUNT_MAKE     := Makefile.am Makefile.in Makefile_standalone
-DIST_GRIDCOUNT_EXAMPLES := examples/Makefile.grid examples/slicer.pl
-DIST_GRIDCOUNT_DOCS     := README INSTALL
+DIST_GRIDCOUNT_EXAMPLES := examples/Makefile.grid examples/slicer.pl \
+	examples/window_density.pl
+DIST_GRIDCOUNT_DOCS     := README INSTALL FAQ
 
-DIST_DIR       := $(NAME)-$(RELEASE).$(MINOR)
-DIST_GRIDCOUNT := $(NAME)-$(RELEASE).$(MINOR).tar.gz 
+DIST_DIR       := $(NAME)-$(RELEASE).$(MINOR).$(REVISION)
+DIST_GRIDCOUNT := $(NAME)-$(RELEASE).$(MINOR).$(REVISION).tar.gz 
 
 
 define usage

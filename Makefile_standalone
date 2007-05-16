@@ -204,8 +204,8 @@ $(DIST_GRIDCOUNT): FORCE
 tar-clean:
 	-rm -rf $(DIST_DIR) $(DIST_GRIDCOUNT)
 
-rsync:
-	rsync -avP $(DIST_GRIDCOUNT) ompa.bioch.ox.ac.uk:/sansom/public_html/sbcb/oliver/download/Gromacs
+rsync: $(DIST_GRIDCOUNT)
+	rsync -avP $^ ompa.bioch.ox.ac.uk:/sansom/public_html/sbcb/oliver/download/Gromacs
 
 .phony: FORCE
 FORCE:

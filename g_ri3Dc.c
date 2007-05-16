@@ -3,9 +3,9 @@
  
    g_ri3Dc -- a grid counter
 
-   Copyright (C) 2003, 2004 Oliver Beckstein <oliver@biop.ox.ac.uk>
+   Copyright (C) 2003-2007 Oliver Beckstein <orbeckst@jhmi,edu>
    This program is made available under the terms of the GNU Public License. 
-   See the file LICENSE or http://www.gnu.org/copyleft/gpl.html
+   See the file README or http://www.gnu.org/copyleft/gpl.html
 
 */
 
@@ -75,7 +75,7 @@
 
    and if within a cell, the counter 
 
-      occupation[ijk[d]] 
+      occupancy[ijk[d]] 
 
    for this cell is incremented BY THE TIMESTEP (so that we can deal
    with trajectories that have different time steps)
@@ -272,7 +272,7 @@ int main(int argc,char *argv[])
     { efDAT, "-grid",    "gridxdr", ffWRITE },
   };
 
-  FILE       *fGrid;         /* 3D grid with occupation numbers */
+  FILE       *fGrid;         /* 3D grid with occupancy numbers */
   t_tgrid    tgrid;          /* all information about the grid */
   t_topology *top;           /* topology                   */
   double     sumP;           /* Sum_xyz P(x,y,z) */

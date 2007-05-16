@@ -26,17 +26,21 @@ static char *SRCID_count_h = "$Id$";
 
 /* types of index: atoms or molecules */
 enum ndxtype    {etxATOM, etxMOL, etxNR};  
+enum eDensUnit {eduUNITY, eduSPC, eduMOLAR, eduANG, eduVOXELPROB, eduNR};
 /* units to mesure a number density n (given in nm^-3) in:
    n' = n/DensUnit
+
+   UNITY:
+    1 nm^-3 = 1 x 1 nm^-3
 
    SPC: 
     rho0 = 0.9669;      # bulk SPC water at 300K (Gromacs 3, ffgmx)
                         # new: from max of P(N), labbook II, p159:
-                        #            0.966894±0.000462 g cm-³
+                        #            0.966894±0.000462 g cm^-3
                         #      from N/<V>, II, p158
-                        #            0.966458±0.00458  g cm-³
+                        #            0.966458±0.00458  g cm^-3
     # volume of one water molecule at T=300K, P=1bar (Labbook II p159)
-    # in nm³
+    # in nm^3
     v_water   = 0.030938;
     1/v_water = 32.3227
 
@@ -45,8 +49,16 @@ enum ndxtype    {etxATOM, etxMOL, etxNR};
 
    ANG: in Angstroem^-3
     1 nm^-3 = 1 (10 A)^-3 
+
+   VOXELPROB:
+    probability for this voxel to be occupied (a value between 0 and 1):
+    Simply multiply the density by the cell volume.
+
+    n' = n / (1/(deltaX*deltaY*deltaZ))
+
+    (Note that this is NOT a probability yet but just the average number
+    per voxel. For a probability, normalise by the total sum.)
  */
-enum eDensUnit {eduUNITY, eduSPC, eduMOLAR, eduANG, eduNR};
 extern char *endxtype_names[etxNR+1];
 extern char *eDensUnit_names[eduNR+1];
 extern real DensUnit[eduNR];

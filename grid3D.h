@@ -3,7 +3,7 @@
 
   collect stuff common to g_ri3Dc and a_ri3Dc
 
-  Copyright (C) 2003, 2004 Oliver Beckstein <oliver@biop.ox.ac.uk>
+  Copyright (C) 2003, 2004 Oliver Beckstein <orbeckst@jhmi.edu>
   This program is made available under the terms of the GNU Public License. 
   See the file LICENSE or http://www.gnu.org/copyleft/gpl.html
 

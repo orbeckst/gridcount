@@ -37,7 +37,7 @@ static char *SRCID_a_ri3Dc_c = "$Id$";
 
    Purpose: 
 
-   analyse occupation maps (3D grids) produced by g_ri3Dc
+   analyse occupancy maps (3D grids) produced by g_ri3Dc
 
    Typically application: count water molecules, and determine the
    true solvent accessible volume of a pore.
@@ -302,7 +302,7 @@ int main(int argc,char *argv[])
   static bool bDoHoles = FALSE;          /* use instead of giving fns
                                             explixitly */
   static char *DensUnitStr[] = 
-         { NULL, "unity", "SPC", "molar", "Angstrom", NULL };
+    { NULL, "unity", "SPC", "molar", "Angstrom", "Voxel", NULL };
   static rvec Delta = {0.02,0.02,0.02};  /* resolution in nm for
                                             coarse graining */
   static int  rad_ba_nr =   RAD_BA_NR;   /* block average of radial
@@ -341,9 +341,10 @@ int main(int argc,char *argv[])
       "mirror the radial projection P(r,z) to create the impression of a "
       "full view of the pore"},
     { "-unit", FALSE, etENUM, {DensUnitStr},
-      "divide number density (in nm^-3) by 1, the density of SPC "
-      "water at 300K and 1 bar, in mol/l or in "
-      "Angstrom^-3. Allowed values"},
+      "output density as number density (in nm^-3), "
+      "relative to the density of SPC water at 300K and 1 bar, "
+      "in mol/l, in Angstrom^-3, "
+      "or as the number per Voxel. Allowed values"},
     { "-xfarbe-maxlevel", FALSE, etREAL, {&maxDensity},
       "xfarbe will plot 15 equally space level up to this density (the unit must "
       "be the same as for the -unit option!) Default is 1.5 SPC bulk." },
@@ -441,6 +442,7 @@ int main(int argc,char *argv[])
     */
   }
 
+
   /* select the unit (DensUnit[nunit]) for the density plots */
   switch (DensUnitStr[0][0]) {
   case 'S': /*SPC water at 300K, 1 bar */
@@ -452,20 +454,18 @@ int main(int argc,char *argv[])
   case 'A': /* in Angstrom^-3 */
     nunit = eduANG;
     break;
+  case 'V': /* Voxel probability, multiply by cell volume in nm^-3 */
+    /* Note that DensUnit[eduVOXELPROB] must be set after reading the
+       grid (or resampling) because the Voxel probability unit is
+       computed from the cell volume) */       
+    nunit = eduVOXELPROB;
+    break;
   case 'u': /* unity */
   default:
     nunit = eduUNITY;
   } /*end switch */
 
-  min_occ *= DensUnit[nunit]; /* compare filling of cell in chosen unit */
-
-  if(!opt2parg_bSet("-xfarbe-maxlevel",NPA,pa)) {
-    maxDensity /= DensUnit[nunit];
-    dmsg("Converted the default xfarbe-maxlevel: %f %s\n",
-	 maxDensity, EDENSUNITTYPE(nunit));
-  }
-
-  /* open input file */
+  /* open input file  */
   msg("Reading grid 3D file...\n");
   fGrid    = ffopen (opt2fn("-grid", NFILE, fnm), "r");
   if (!grid_read(fGrid,&tgrid,header)) 
@@ -485,6 +485,41 @@ int main(int argc,char *argv[])
   if (tgrid.Delta[XX] != tgrid.Delta[YY]) 
     dmsg("Warning: Delta[XX]=%.4f != Delta[YY]=%.4f, setting DeltaR=%.4f\n",
 	 tgrid.Delta[XX], tgrid.Delta[YY], DeltaR);
+
+  /* grid diagnostics and normalisations */
+
+  dV = DeltaV(&tgrid);
+
+  /* the grid output is a number density. Unit nm^-3   */
+  /* sum over the whole grid (for the integral, multiply by dV) */
+  sumP = 0; sumH = 0;
+  for(k=0;k<tgrid.mx[ZZ];k++) 
+    for(j=0;j<tgrid.mx[YY];j++) 
+      for(i=0;i<tgrid.mx[XX];i++) {
+	sumP += (double) tgrid.grid[i][j][k];
+	if (tgrid.grid[i][j][k] <= min_occ)  sumH++;
+      }
+
+  sumP *= dV;     /* dont forget the dV ... */
+  sumH *= dV;
+  dmsg("Integrals over the whole grid:\n"
+       "  sumP = <<N>>     = Sum_ijk dV*n[ijk] = %.2f\n"
+       "  sumH = <<holes>> = Sum_ijk dV*h[ijk] = %.2f\n",
+       sumP,sumH);
+
+  /* density stuff that may rely on the grid; Note: if resampling is
+     implemented, this must be done after resampling, too */
+  DensUnit[eduVOXELPROB] = sumP;
+  min_occ *= DensUnit[nunit]; /* compare filling of cell in chosen unit */
+
+
+  if(!opt2parg_bSet("-xfarbe-maxlevel",NPA,pa)) {
+    maxDensity /= DensUnit[nunit];
+    dmsg("Converted the default xfarbe-maxlevel: %f %s\n",
+	 maxDensity, EDENSUNITTYPE(nunit));
+  }
+
+
 
   /* setup proj */
   if (!(xyp=grid2_alloc(tgrid.mx[XX],tgrid.mx[YY])) ||
@@ -522,22 +557,6 @@ int main(int argc,char *argv[])
      of the original radius so that a comparison between this radius
      and the effective radius is meaningful */
 
-  /* the grid output is a number density. Unit nm^-3   */
-  /* sum over the whole grid (for the integral, multiply by dV) */
-  sumP = 0; sumH = 0;
-  for(k=0;k<tgrid.mx[ZZ];k++) 
-    for(j=0;j<tgrid.mx[YY];j++) 
-      for(i=0;i<tgrid.mx[XX];i++) {
-	sumP += (double) tgrid.grid[i][j][k];
-	if (tgrid.grid[i][j][k] <= min_occ)  sumH++;
-      }
-  dV = DeltaV(&tgrid);
-  sumP *= dV;     /* dont forget the dV ... */
-  sumH *= dV;
-  dmsg("Integrals over the whole grid:\n"
-       "  sumP = <<N>>     = Sum_ijk dV*n[ijk] = %.2f\n"
-       "  sumH = <<holes>> = Sum_ijk dV*h[ijk] = %.2f\n",
-       sumP,sumH);
     
   /* NB:     Integral_L dx f(x) =       Sum_i DELTAx f_i
          1/L Integral_L dx f(x) = 1/n_x Sum_i        f_i
@@ -935,7 +954,7 @@ int main(int argc,char *argv[])
 
 
   /* write parameter file for xfarbe 
-     see https://indigo1.biop.ox.ac.uk/xfarbe/html/#xfarbe.file
+     see http://www.fhi-berlin.mpg.de/~grz/pub/xfarbe.html
   */
   xf_write_XFarbe(XFARBE_NCOLS);
 

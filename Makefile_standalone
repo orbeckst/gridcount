@@ -17,7 +17,7 @@
 
 # Set GMX_TOP_DIR to your Gromacs installation and check the
 # INCLUDE and LIB dir.
-GMX_TOP_DIR     := $(HOME)/Gromacs/3.3.1
+GMX_TOP_DIR     := $(HOME)/Biop/Library/Gromacs/code/3.3.1
 
 # EXEC depends on your machine/OS
 GMX_EXEC_PREFIX := $(GMX_TOP_DIR)/#
@@ -29,7 +29,7 @@ BIN_DIR := $(GMX_EXEC_PREFIX)/bin
 
 # This is only necessary for the creation of etags and can be safely ignored
 # (for compilation it is not important).
-GMX_SOURCE_DIR  := /usr/local/src/gmx
+GMX_SOURCE_DIR  := ~/Biop/Library/Gromacs/code/source/gromacs-3.3.1/src/
 #
 ##########################################################################
 

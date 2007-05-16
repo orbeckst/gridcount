@@ -16,7 +16,7 @@ you to have the Gromacs include files and libgmx and libmd installed
 Both programs utilise a number of common routines so it was natural to
 bundle them in a small library, libgridcount. 
 
-The 1.0 bersion of these programs were compiled and tested with
+The 1.0 versions of these programs were compiled and tested with
 Gromacs 3.1.4 and Gromacs 3.2.1 under Red Hat 8.0 Linux and Debian
 Linux.
 

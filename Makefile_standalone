@@ -167,7 +167,7 @@ TAGS: $(ALL_SOURCES)
 	find $(GMX_SOURCE_DIR) -name '*.[ch]' | xargs etags --append 
 
 
-.PHONY: clean distclean tar-clean install dist
+.PHONY: clean distclean tar-clean install dist rsync
 
 install:  $(G_RI3DC) $(A_RI3DC) $(A_GRIDCALC)
 	for p in $^; do \
@@ -203,6 +203,9 @@ $(DIST_GRIDCOUNT): FORCE
 
 tar-clean:
 	-rm -rf $(DIST_DIR) $(DIST_GRIDCOUNT)
+
+rsync:
+	rsync -avP $(DIST_GRIDCOUNT) ompa.bioch.ox.ac.uk:/sansom/public_html/sbcb/oliver/download/Gromacs
 
 .phony: FORCE
 FORCE:

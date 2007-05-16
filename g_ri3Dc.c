@@ -216,10 +216,17 @@ int main(int argc,char *argv[])
   };
 
   static char *bugs[] = {
+    "Only works with cubic and orthorhombic unit cells.",
+    "Calculates the density in a box that contains the "
+    "cylinder oriented along (0,0,1), "
+    "defined by -z1 and -z2 (defaults to box z_min and z_max) "
+    "and the radius (defaults to the maximum radius that fits into the "
+    "XY-plane of the box!). This is NOT the whole simulation box, just "
+    "the bounding boz of the cylinder. If you want more, manually set -R.",
     "The program guarantees to use the user supplied grid spacing. "
     "If the other "
     "dimensions are incommensurable with Delta they are changed to comply.",
-    "If you want radial distribution functions (yes, you do!) always use "
+    "If you want radial distribution functions always use "
     "Delta[XX] == Delta[YY] to keep the cylindrical symmetry", 
     "z-axis is the only allowed axis (and this will probably not "
     "change in the future)",

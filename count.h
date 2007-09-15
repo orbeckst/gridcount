@@ -40,9 +40,9 @@ enum eDensUnit {eduUNITY, eduSPC, eduMOLAR, eduANG, eduVOXELPROB, eduNR};
                         #      from N/<V>, II, p158
                         #            0.966458±0.00458  g cm^-3
     # volume of one water molecule at T=300K, P=1bar (Labbook II p159)
-    # in nm^3
-    v_water   = 0.030938;
-    1/v_water = 32.3227
+    # in nm^3 
+    v_water   = 0.030938 nm^3
+    1/v_water = 32.3227  nm^-3
 
    MOLAR:
     1 nm^-3 = 1/N_Avogadro * (10^-8 dm)^-3

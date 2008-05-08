@@ -1,6 +1,6 @@
 $Id$
 Grid counter g_ri3Dc and analysis tools a_ri3Dc and a_gridcalc
-Copyright (C) 2004-2007 Oliver Beckstein <orbeckst@jhmi.edu>
+Copyright (C) 2004-2008 Oliver Beckstein <orbeckst@gmail.com>
 Released under the GNU Public License (see README)
 
 
@@ -16,7 +16,7 @@ you to have the Gromacs include files and libgmx and libmd installed
 Both programs utilise a number of common routines so it was natural to
 bundle them in a small library, libgridcount. 
 
-The 1.0 versions of these programs were compiled and tested with
+The 1.0 version of these programs were compiled and tested with
 Gromacs 3.1.4 and Gromacs 3.2.1 under Red Hat 8.0 Linux and Debian
 Linux.
 
@@ -25,6 +25,10 @@ The current 1.1 version was quickly modified to compile with Gromacs
 fatal_error() it probably won't compile with older Gromacs versions
 (pre 3.3 I imagine).
 
+The 1.2 version compiles with Gromacs 3.3.3 (tested on Mac OS
+X). (Sorry, I don't have the time to make versions properly backward
+compatible with older Gromacs versions. Just email me if you have
+problems.)
 
 As contributed software
 -----------------------

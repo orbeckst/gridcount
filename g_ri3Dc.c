@@ -110,7 +110,7 @@ static char *SRCID_g_ri3Dc_c = "$Id$";
 #include "mshift.h"
 #include "gstat.h"
 #include "names.h"
-#include "fatal.h"
+#include "gmx_fatal.h"
 #include "gridcount.h"
 
 void init_t_result (t_result *, t_tgrid *, real **, real **, real **);

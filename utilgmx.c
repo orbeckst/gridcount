@@ -11,7 +11,7 @@
 static char *SRCID_utilgmx_c = "$Id$";
 
 #include "utilgmx.h"
-#include "fatal.h"
+#include "gmx_fatal.h"
 #include "futil.h"
 #include "maths.h"
 #include "smalloc.h"
@@ -164,7 +164,7 @@ void dprintf (const char *format, ...)
 
 void dfprintf (const char *format, ...)
 {
-  /* write to debug file (see fatal.h) */
+  /* write to debug file (see gmx_fatal.h) */
   va_list args;
   va_start(args, format);
   

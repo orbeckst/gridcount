@@ -21,7 +21,7 @@ static char *SRCID_xdr_grid_h = "$Id$";
 #include <stdio.h>
 #include <rpc/rpc.h>
 #include <rpc/xdr.h>
-#include "fatal.h"
+#include "gmx_fatal.h"
 #include "names.h"
 #include "smalloc.h"
 #include "typedefs.h"

@@ -55,7 +55,7 @@ static char *SRCID_grid3D_h = "$Id$";
 #include <stdio.h>
 #include <stdlib.h>
 #include "typedefs.h"
-#include "fatal.h"
+#include "gmx_fatal.h"
 #include "xdr_grid.h"
 #include "count.h"
 #include "utilgmx.h"

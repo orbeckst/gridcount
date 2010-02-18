@@ -207,10 +207,10 @@ int main(int argc,char *argv[])
     "to write it out as ascii text.\n" 
     "[PAR]",
     "Suggested use for water:\n",
-    "create an index file for the water molecules:\n",
-    "  [TT]echo -e \"keep 0\\ndel 0\\nr SOL\\nq\\n\" ",
-    "| make_ndx -f in.pdb -o sol.ndx[TT]\n",
-    "and run [TT]g_ri3Dc -m[TT] on it ([TT]-m[TT] is the default)."
+    "create an index file for the water oxygens:\n",
+    "  [TT]echo -e \"keep 0\\ndel 0\\na OW\\nq\\n\" ",
+    "| make_ndx -f in.pdb -o ow.ndx[TT]\n",
+    "and run [TT]g_ri3Dc[TT] on it."
     "[PAR]"
     "Caveats and known limitations:\n"
   };
@@ -230,18 +230,21 @@ int main(int argc,char *argv[])
     "Delta[XX] == Delta[YY] to keep the cylindrical symmetry", 
     "z-axis is the only allowed axis (and this will probably not "
     "change in the future)",
+    "Currently one can only count atoms, not molecules.",
+    /*
     "-m behaves different from the standard usage "
     "within the g_* programs -- it figures out _for itself_ what the "
     "molecules are and does not need MOLECULE numbers but ATOM_IDs.",
     "-m is the DEFAULT behaviour. It works nicely with a SOL index file but "
     "more complicated solvents are untested.",
     "For IONS you haved to use the -nom option!",
+    */
     "The XDR file is not compressed.",
     "Even the developer mistypes the name frequently",
   };
 
   static bool bdtWeight  = TRUE; /* weigh counts by the timestep */ 
-  static bool bMolecular = TRUE; /* default is to use molecules    */
+  static bool bMolecular = FALSE; /* default is to use molecules XXX TRUE broken/disabled    */
   static t_cavity   cavity = {   /* define volume to count mols in */
     {0, 0, 1},            /* axis -- cannot be changed */
     {0, 0, 0},            /* cpoint */
@@ -252,10 +255,11 @@ int main(int argc,char *argv[])
   static rvec Delta = {0.05, 0.05, 0.05}; /* spatial resolution in nm */
   static char buf[HEADER_MAX];        /* additional text for graphs */
   static char *header = buf;          
+  static int  ngroups = 1;  /* not used >1 */
 
   t_pargs pa[] = {
     { "-m",      FALSE, etBOOL, {&bMolecular},
-      "index contains atoms, but g_ri3Dc counts the molecules"},
+      "HIDDENindex contains atoms, but g_ri3Dc counts the molecules (BROKEN--DO NOT USE)"},
     { "-cpoint", FALSE, etRVEC, {&(cavity.cpoint)},
       "Point on the central symmetry axis of the grid"},
     { "-R",      FALSE, etREAL, {&(cavity.radius)},
@@ -270,6 +274,8 @@ int main(int argc,char *argv[])
       "HIDDENWeigh counts with the time step (yes) or count all equally (no)"},
     { "-subtitle", FALSE, etSTR, {&header},
       "Some text to add to the output graphs"},
+    { "-ng",       FALSE, etINT, {&ngroups},
+      "HIDDENNumber of groups to consider" },    
   };
 
   t_filenm fnm[] = {
@@ -281,7 +287,7 @@ int main(int argc,char *argv[])
 
   FILE       *fGrid;         /* 3D grid with occupancy numbers */
   t_tgrid    tgrid;          /* all information about the grid */
-  t_topology *top;           /* topology                   */
+  t_topology top;            /* topology                   */
   double     sumP;           /* Sum_xyz P(x,y,z) */
   double     T_tot;          /* total time */   
   real       weight;         /* each count adds one weight to P(x,y,z) */
@@ -292,13 +298,28 @@ int main(int argc,char *argv[])
   int        natoms;         /* number of atoms in system  */
   int        status;
   int        i;              /* loopcounters                 */
-  char       *grpname;       /* name of the group            */
-  int        gnx;            /* number of atoms in group*/
-  int        gnmol;          /* number of molecules in group */
-  atom_id    *molndx;        /* index of mols in atndx */
-  atom_id    *index;         /* atom numbers in index file  */
-  t_block    *mols;          /* all molecules in system    */
+
+  /* from gmx_traj.c -- loading of indices */
+  char       *indexfn;
+  char       **grpname;
+  int        *isize0 = NULL, *isize = NULL;
+  atom_id    **index0 = NULL, **index = NULL;
+  atom_id    *atndx = NULL;
+  t_block    *mols= NULL;
+  char       *ggrpname;      /* name of the FIRST group       */
+  int        gnx = 0;        /* number of atoms in FIRST group*/
+  atom_id    *gindex = NULL; /* index of FIRST group */
+  int        gnmol = 0;      /* XXX number of molecules in group */
+  int        moleculesize;   /* XXX size of molecule in numbers*/
+  atom_id    *molndx = NULL; /* XXX index of mols in atndx */
+  t_atom     *atoms;         /* XXX replaces 'a' ???? */
+
   char       s_tmp[STRLEN];  /* string for use with sprintf() */
+
+  int        ePBC;
+  char       title[STRLEN];
+  rvec       *xtop;
+  bool       bTop;
 
 #define NFILE asize(fnm)
 #define NPA   asize(pa)
@@ -321,29 +342,45 @@ int main(int argc,char *argv[])
 
 
   /* open input files */
-  top=read_top(ftp2fn_null(efTPS,NFILE,fnm));
-  get_index(&(top->atoms),ftp2fn_null(efNDX,NFILE,fnm),
-	    1,&gnx,&index,&grpname);
+  bTop = read_tps_conf(ftp2fn(efTPS,NFILE,fnm),title,&top,&ePBC,&xtop,NULL,box,TRUE);
+  sfree(xtop);
 
-  /* get info about topology etc */
-  mols=&(top->blocks[ebMOLS]);
+  if (!bTop) {
+    gmx_fatal(FARGS, "Need a run input file");
+  }
 
-  /* construct array molndx of mol indices in atndx if -m is set */
-  molndx = NULL;
-  gnmol  = 0;
   if (bMolecular) {
-    msg ("Interpreting indexfile entries as parts of molecules and "
-	 "using \ntheir center of mass.\n");
-    snew (molndx, mols->nr);
-    if ( (gnmol = mols_from_index (index, gnx, mols, molndx, mols->nr)) < 0) {
-      gmx_fatal(FARGS, "Error: could not find  molecules.\n");
-    };
-    msg ("%-10s%10s%10s\n", "Group", "Molecules", "Atoms");
-    msg ("%-10s%10d%10d\n", grpname,  gnmol, gnx);
-    msg ("%-10s%10d%10d\n", "System", mols->nr, top->atoms.nr);
+    gmx_fatal(FARGS, "Sorry, -m option not working at the moment");
+    indexfn = ftp2fn(efNDX,NFILE,fnm);
+  }
+  else {
+    indexfn = ftp2fn_null(efNDX,NFILE,fnm);
+  }
 
-    snew (xmol_cm,gnmol);
-  };
+  if (ngroups != 1) {
+    gmx_fatal(FARGS, "Sorry, only a single group currently allowed.");
+  }
+
+  snew(grpname,ngroups);
+  snew(isize0,ngroups);
+  snew(index0,ngroups);
+
+  get_index(&(top.atoms),indexfn,ngroups,isize0,index0,grpname);
+
+  /* XXX */
+  if (bMolecular) {
+    gmx_fatal(FARGS, "Sorry, -m option not working at the moment");
+  } else {
+    isize = isize0;
+    index = index0;
+  }
+  /* ngroups == 1 at moment */
+  gnx = isize[0];
+  gindex = index[0];
+  ggrpname = grpname[0];
+  atoms = top.atoms.atom;
+  mols = &(top.mols);
+  atndx = mols->index;
 
   dt=get_timestep(ftp2fn(efTRX,NFILE,fnm));
 
@@ -373,15 +410,15 @@ int main(int argc,char *argv[])
     T_tot += (double) dt;
     weight = bdtWeight ? dt : 1;     /* weight for a count in P(x,y,z) */
     if (bMolecular) {
-      /* prepare COM coordinates for molecules in xmol_cm */
-      x2molxcm (top, molndx, gnmol, box, x, x_s, xmol_cm);
-      /* loop over all molecules */
-      for(i=0; i<gnmol; i++) 
-	sumP += gridcount(&tgrid, xmol_cm[i], weight);
+      /* IGNORED FOR THE MOMENT while -m is not supported until I figure out how to
+	 obtain the information form the new topology API.
+	 OB 2010-02-18
+      */
+      gmx_fatal(FARGS, "Sorry, -m option not working at the moment");
     } else {
       /* over all atoms */
       for(i=0; i<gnx; i++) 
-	sumP += gridcount(&tgrid, x[index[i]], weight);
+	sumP += gridcount(&tgrid, x[gindex[i]], weight);
     }
   } while(read_next_x(status,&t,natoms,x,box));
 
@@ -422,7 +459,7 @@ int main(int argc,char *argv[])
 	    "{<Delta>}%.3f"
             "{<N>}%.2f{XTC}%s"
             "{Delta}(%.3f,%.3f,%.3f){sumP}%g%s",
-	    s_tmp, T_tot, grpname, cavity.z1, cavity.z2, cavity.radius, 
+	    s_tmp, T_tot, ggrpname, cavity.z1, cavity.z2, cavity.radius, 
 	    (tgrid.Delta[XX]+tgrid.Delta[YY]+tgrid.Delta[ZZ])/3.,
             sumP/T_tot, ftp2fn(efTRX,NFILE,fnm), 
             tgrid.Delta[XX],tgrid.Delta[YY],tgrid.Delta[ZZ],

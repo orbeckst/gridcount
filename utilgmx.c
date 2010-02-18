@@ -176,7 +176,7 @@ void dfprintf (const char *format, ...)
 };
 
 
-real ldist (rvec x, rvec p, rvec c) {
+real ldist (const rvec x, const rvec p, const rvec c) {
   /* calculate the (perpendicular) distance of point x from the line
      through c pointing along p 
   */

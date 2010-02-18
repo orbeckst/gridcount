@@ -1,4 +1,3 @@
-$Id$
 Grid counter g_ri3Dc and analysis tool a_ri3Dc
 Copyright (C) 2003-2008 Oliver Beckstein <orbeckst@gmail.com>
 
@@ -106,9 +105,6 @@ BUGs and such
   the '-h' flag and in particular note the 'BUGs and known limitation'
   section of the output.
 
-* In particular, when counting ions it is essential to explicitly use
-  the '-nom' option. 
-
 * The analysis tool is fairly limited. I use it to generate densities
   in channels and pores (that's why it only does cylindrical
   averages). If you need spherical spatial distribution functions look
@@ -143,5 +139,9 @@ TODO
 * Probably more code cleanup.
 
 * The native density format should be something like OpenDX because
-  then it woukld be more interoperable and easier to manipulate with
+  then it would be more interoperable and easier to manipulate with
   existing tools.
+
+* Triclinic box support should be added.
+
+* Currently only atoms can be counted, not molecules.

@@ -66,7 +66,7 @@ bool xdr_grid (XDR *xdrs, t_XDRgrid *xg) {
 
 
 bool xdr_grid_v1 (XDR *xdrs, t_XDRgrid *xg) {
-  int ngrid;
+  u_int ngrid;
   
   ngrid = xg->size[0] * xg->size[1] * xg->size[2];
   xg->tweight = 1.0;    /* tweight default for format < 2 */
@@ -86,7 +86,7 @@ bool xdr_grid_v1 (XDR *xdrs, t_XDRgrid *xg) {
 } 
 
 bool xdr_grid_v2 (XDR *xdrs, t_XDRgrid *xg) {
-  int ngrid;
+  u_int ngrid;
   
   ngrid = xg->size[0] * xg->size[1] * xg->size[2];
   return (xdr_int    (xdrs, &xg->version)           &&

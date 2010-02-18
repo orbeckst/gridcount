@@ -47,7 +47,7 @@ extern void msg     (const char *format, ...);
 extern void dmsg    (const char *format, ...);
 extern void dprintf (const char *format, ...);
 extern void dfprintf (const char *format, ...);
-extern real ldist (rvec x, rvec p, rvec c);
+extern real ldist (const rvec x, const rvec p, const rvec c);
 extern real dt_tpx (char *fn);
 extern int  list_add_atomid (const atom_id, int *, atom_id *);
 

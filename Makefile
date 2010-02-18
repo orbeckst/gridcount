@@ -88,7 +88,7 @@ DIST_GRIDCOUNT_H   := $(sort  $(A_RI3DC_H) $(A_GRIDCALC_H) \
 	$(G_RI3DC_H) $(LIBGC_H))
 DIST_GRIDCOUNT_SRC := $(sort  $(A_RI3DC_SRC) $(A_GRIDCALC_SRC) \
 	$(G_RI3DC_SRC) $(LIBGC_SRC))
-DIST_GRIDCOUNT_MAKE     := Makefile
+DIST_GRIDCOUNT_MAKE     := Makefile config.guess
 DIST_GRIDCOUNT_EXAMPLES := examples/Makefile.grid examples/slicer.pl \
 	examples/window_density.pl
 DIST_GRIDCOUNT_DOCS     := README INSTALL FAQ CHANGELOG

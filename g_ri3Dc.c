@@ -88,8 +88,6 @@
   For the file format see grid3D.h 
 */
 
-static char *SRCID_g_ri3Dc_c = "$Id$";
-
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -328,14 +326,12 @@ int main(int argc,char *argv[])
   strncpy(header,"",HEADER_MAX);
 
   CopyRight(stderr,argv[0]);
-  fprintf (stderr, "\nVersion: %s\n\n", SRCID_g_ri3Dc_c);
 
   parse_common_args(&argc,argv,PCA_CAN_TIME | PCA_CAN_VIEW,
 		    NFILE,fnm,asize(pa),pa,asize(desc),desc,asize(bugs),bugs);
 
   if (bDebugMode()) {
     dfprintf ("%s -- debugging...\n\n", Program());
-    dfprintf ("Source version: %s\n", SRCID_g_ri3Dc_c);
     dfprintf ("Version of the grid file format: %d\n", GRID_FF_VERSION);
   };
   dmsg("bdtWeight = %i\n",bdtWeight);

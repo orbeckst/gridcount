@@ -7,8 +7,6 @@
    See the file LICENSE or http://www.gnu.org/copyleft/gpl.html
 
  */
-static char *SRCID_a_ri3Dc_c = "$Id$";
-
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -421,7 +419,6 @@ int main(int argc,char *argv[])
   strncpy(header,"",HEADER_MAX);
 
   CopyRight(stderr,argv[0]);
-  fprintf (stderr, "\nVersion: %s\n\n", SRCID_a_ri3Dc_c);
 
   parse_common_args(&argc,argv, 0,
 		    NFILE,fnm,asize(pa),pa,asize(desc),desc,asize(bugs),bugs);

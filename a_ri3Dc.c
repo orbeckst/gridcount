@@ -509,7 +509,7 @@ int main(int argc,char *argv[])
 
   /* density stuff that may rely on the grid; Note: if resampling is
      implemented, this must be done after resampling, too */
-  DensUnit[eduVOXELPROB] = sumP;
+  DensUnit[eduVOXELPROB] = dV;
   min_occ *= DensUnit[nunit]; /* compare filling of cell in chosen unit */
 
 

@@ -3,7 +3,7 @@
    specialised functions which are used in the gridcounters and also 
    in g_count and g_flux
 
-   Copyright (C) 2003, 2004 Oliver Beckstein <oliver@biop.ox.ac.uk>
+   Copyright (C) 2003-2007 Oliver Beckstein <orbeckst@jhmi.edu>
    This program is made available under the terms of the GNU Public License. 
    See the file LICENSE or http://www.gnu.org/copyleft/gpl.html
 
@@ -14,10 +14,12 @@
 char *endxtype_names[etxNR+1] = {
   "atoms", "molecules", NULL };
 char *eDensUnit_names[eduNR+1] = {
-  "nm^-3", "n(SPC,T=300K,P=1bar)", "mol/l", "Angstrom^-3", NULL };
-/* conversion divisors: n' = n/DensUnit, see comments in count.h  */
+  "nm^-3", "n(SPC,T=300K,P=1bar)", "mol/l", "Angstrom^-3", "Voxel",NULL };
+/* conversion divisors: n' = n/DensUnit, see comments in count.h  
+   The factor (-1) for VOXELPROB must be calculated  as 1/DeltaX*DeltaY*DeltaZ.
+ */
 real DensUnit[eduNR] = {
-  1.000000,  32.3227, 0.602214, 1000.0};  
+  1.000000,  32.3227, 0.602214, 1000.0, -1};  
 
 
 bool autoset_cavity (t_cavity *cavity,matrix box,int npa,t_pargs pa[]) {

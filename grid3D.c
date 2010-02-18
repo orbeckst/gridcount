@@ -26,13 +26,14 @@ bool grid_write (FILE *fp,t_tgrid *tg,char *header) {
   xg.version = GRID_FF_VERSION;
   xg.header  = header;
   xg.type    = egtyREGULAR;
+  xg.tweight = tg->tweight;
   xg.dim     = 3;
   xg.size    = tg->mx;
   xg.delta   = tg->Delta;
   xg.origin  = tg->a;
   
   if(! (xg.grid=grid3_serialise(tg->grid,tg->mx))) 
-    fatal_error(0,"grid_write(): Cannot allocate memory for grid "
+    gmx_fatal(FARGS,"grid_write(): Cannot allocate memory for grid "
 		"serialisation.\n");
 
   xdrstdio_create (&xdrs, fp, XDR_ENCODE);
@@ -69,19 +70,21 @@ bool grid_read (FILE *fp,t_tgrid *tg,char *header) {
 
   xdrstdio_create (&xdrs, fp, XDR_DECODE);
   if (! xdr_grid(&xdrs,&xg)) {  
-    msg("grid_read(): XDR read failed.\n");
+    msg("grid_read(): XDR read failed "
+	"(probably file format incompatible, try -debug).\n");
     return FALSE;
   }; 
-  if (abs(xg.version) > abs(GRID_FF_VERSION)) 
+  if (xg.version > GRID_FF_VERSION) 
     msg("WARNING: grid was WRITTEN with version %d, but is READ "
 	"with version %d\n",
 	xg.version, GRID_FF_VERSION);
   if (xg.dim != 3)                       /* see CAVEAT above */
-    fatal_error(0,"grid_read(): The data file appears to have dim=%d, but this \n"
+    gmx_fatal(FARGS,"grid_read(): The data file appears to have dim=%d, but this \n"
 	          "             routine can only read 3D grids.\n",xg.dim); 
 
   dmsg("Version (file) %d\n",xg.version);
   dmsg("GridType   %s\n",GRIDTYPE(xg.type));
+  dmsg("Tweight    %g ps\n",xg.tweight);
   dmsg("Dimension  %d\n",xg.dim);
   dmsg("Size       ");
   for(i=0;i<xg.dim;i++) dmsg("%5d ", xg.size[i]);
@@ -94,8 +97,9 @@ bool grid_read (FILE *fp,t_tgrid *tg,char *header) {
   dmsg("\n");
   
   if(! (tg->grid=grid3_unserialise(xg.grid,xg.size))) 
-    fatal_error(0,"grid_write(): Cannot allocate memory for grid "
+    gmx_fatal(FARGS,"grid_write(): Cannot allocate memory for grid "
 		"un-serialisation.\n");
+  tg->tweight = xg.tweight; /* should do this with pointer */
 
   xdr_destroy(&xdrs);
   return TRUE;

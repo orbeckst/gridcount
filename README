@@ -1,6 +1,6 @@
 $Id$
 Grid counter g_ri3Dc and analysis tool a_ri3Dc
-Copyright (C) 2004 Oliver Beckstein <oliver@biop.ox.ac.uk>
+Copyright (C) 2003-2008 Oliver Beckstein <orbeckst@gmail.com>
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -47,6 +47,11 @@ http://plasma-gate.weizmann.ac.il/Grace/) and 2D data and parameter
 files which are suitable for xfarbe (A. Preusser,
 http://www.fhi-berlin.mpg.de/~grz/pub/xfarbe.html).
 
+a_gridcalc can be used to average densities. The plan is to extend it
+into a more versatile grid calculator (but then again, it may be
+easier using numeric python, dx, or any other software already written
+for such purposes.)
+
 As an example I added a Makefile (examples/Makefile.grid) that I use
 to create a whole bunch of graphics, including eps from the 2D plots
 (see the top of Makefile.grid for instructions). examples/slicer.pl is
@@ -75,7 +80,7 @@ Phys Biol 1 (2004), 43, http://stacks.iop.org/1478-3975/1/42 or
 http://arxiv.org/abs/q-bio/0402041. 
 
 The latest version is available at 
-http://sansom.biop.ox.ac.uk/oliver/software/#gridcount ; at some point
+http://sbcb.bioch.ox.ac.uk/oliver/software/#gridcount ; at some point
 I might even add some documentation...
 
 
@@ -93,8 +98,7 @@ gOpenMol  http://www.csc.fi/gopenmol/
 BUGs and such
 =============
 
-* Feel free to send feedback to Oliver Beckstein
-  <oliver@biop.ox.ac.uk>
+* Feel free to send feedback to Oliver Beckstein <orbeckst@gmail.com>
 
 * Problems during compilation/installation: see INSTALL
 
@@ -114,6 +118,9 @@ BUGs and such
   pressure coupling or centering of a trajectory on a protein) then
   the outer regions of the density are necessarily ill defined and
   need to be discarded.
+
+* Only works with rectangular boxes.
+
 
 TODO
 ====
@@ -135,3 +142,6 @@ TODO
 
 * Probably more code cleanup.
 
+* The native density format should be something like OpenDX because
+  then it woukld be more interoperable and easier to manipulate with
+  existing tools.

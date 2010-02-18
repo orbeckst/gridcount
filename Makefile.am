@@ -15,11 +15,11 @@ libgridcount@LIBSUFFIX@_la_SOURCES = \
 	gridcount.h
 
 
-bin_PROGRAMS = 	g_ri3Dc a_ri3Dc
+bin_PROGRAMS = 	g_ri3Dc a_ri3Dc a_gridcalc
 
 g_ri3Dc_SOURCES	= g_ri3Dc.c
 a_ri3Dc_SOURCES	= a_ri3Dc.c  
-
+a_gridcalc_SOURCES = a_gridcalc.c  
 
 LDADD = $(lib_LTLIBRARIES) ./libgridcount@LIBSUFFIX@.la \
 	../../mdlib/libmd@LIBSUFFIX@.la \

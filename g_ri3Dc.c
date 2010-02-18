@@ -3,9 +3,9 @@
  
    g_ri3Dc -- a grid counter
 
-   Copyright (C) 2003, 2004 Oliver Beckstein <oliver@biop.ox.ac.uk>
+   Copyright (C) 2003-2007 Oliver Beckstein <orbeckst@jhmi,edu>
    This program is made available under the terms of the GNU Public License. 
-   See the file LICENSE or http://www.gnu.org/copyleft/gpl.html
+   See the file README or http://www.gnu.org/copyleft/gpl.html
 
 */
 
@@ -75,7 +75,7 @@
 
    and if within a cell, the counter 
 
-      occupation[ijk[d]] 
+      occupancy[ijk[d]] 
 
    for this cell is incremented BY THE TIMESTEP (so that we can deal
    with trajectories that have different time steps)
@@ -110,6 +110,7 @@ static char *SRCID_g_ri3Dc_c = "$Id$";
 #include "mshift.h"
 #include "gstat.h"
 #include "names.h"
+#include "gmx_fatal.h"
 #include "gridcount.h"
 
 void init_t_result (t_result *, t_tgrid *, real **, real **, real **);
@@ -164,12 +165,12 @@ static real get_timestep(char *fnm)
   
   ok=read_first_frame(&status,fnm,&fr,TRX_NEED_X);
   if(!ok || !fr.bTime)
-    fatal_error(0,"\nCouldn't read time from first frame.");
+    gmx_fatal(FARGS,"\nCouldn't read time from first frame.");
   t0=fr.time;
     
   ok=read_next_frame(status,&fr);
   if(!ok || !fr.bTime) 
-    fatal_error(0,"\nCouldn't read time from second frame.");
+    gmx_fatal(FARGS,"\nCouldn't read time from second frame.");
   dt=fr.time-t0;
 
   close_trj(status);
@@ -215,11 +216,17 @@ int main(int argc,char *argv[])
   };
 
   static char *bugs[] = {
-    "Not tested with non-orthogonal boxes; it might break for triclinic boxes",
+    "Only works with cubic and orthorhombic unit cells.",
+    "Calculates the density in a box that contains the "
+    "cylinder oriented along (0,0,1), "
+    "defined by -z1 and -z2 (defaults to box z_min and z_max) "
+    "and the radius (defaults to the maximum radius that fits into the "
+    "XY-plane of the box!). This is NOT the whole simulation box, just "
+    "the bounding boz of the cylinder. If you want more, manually set -R.",
     "The program guarantees to use the user supplied grid spacing. "
     "If the other "
     "dimensions are incommensurable with Delta they are changed to comply.",
-    "If you want radial distribution functions (yes, you do!) always use "
+    "If you want radial distribution functions always use "
     "Delta[XX] == Delta[YY] to keep the cylindrical symmetry", 
     "z-axis is the only allowed axis (and this will probably not "
     "change in the future)",
@@ -272,7 +279,7 @@ int main(int argc,char *argv[])
     { efDAT, "-grid",    "gridxdr", ffWRITE },
   };
 
-  FILE       *fGrid;         /* 3D grid with occupation numbers */
+  FILE       *fGrid;         /* 3D grid with occupancy numbers */
   t_tgrid    tgrid;          /* all information about the grid */
   t_topology *top;           /* topology                   */
   double     sumP;           /* Sum_xyz P(x,y,z) */
@@ -329,7 +336,7 @@ int main(int argc,char *argv[])
 	 "using \ntheir center of mass.\n");
     snew (molndx, mols->nr);
     if ( (gnmol = mols_from_index (index, gnx, mols, molndx, mols->nr)) < 0) {
-      fatal_error (1, "Error: could not find  molecules.\n");
+      gmx_fatal(FARGS, "Error: could not find  molecules.\n");
     };
     msg ("%-10s%10s%10s\n", "Group", "Molecules", "Atoms");
     msg ("%-10s%10d%10d\n", grpname,  gnmol, gnx);
@@ -352,14 +359,14 @@ int main(int argc,char *argv[])
 
   /*  setup grid  */
   if (!setup_tgrid (&tgrid, &cavity, Delta)) 
-    fatal_error (-1,"FAILED: setup_tgrid()\n");
+    gmx_fatal(FARGS,"FAILED: setup_tgrid()\n");
 
 
 /*
   main loop over frames
 */
   sumP = 0;       /* sum_xyz P(x,y,z) */
-  T_tot = 0;
+  T_tot = 0;      /* total simulation time for this data set (ps?) */
   do {
     dt = t - tlast;
     tlast = t;
@@ -407,7 +414,7 @@ int main(int argc,char *argv[])
 	for(j=0;j<tgrid.mx[YY];j++)
 	  tgrid.grid[i][j][k] /= (dV*T_tot);
   }
-  
+  tgrid.tweight = (real)T_tot;
 
   strcpy(s_tmp,header);
   snprintf (header, HEADER_MAX,

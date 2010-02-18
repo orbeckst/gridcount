@@ -3,7 +3,7 @@
 
   collect stuff common to g_ri3Dc and a_ri3Dc
 
-  Copyright (C) 2003, 2004 Oliver Beckstein <oliver@biop.ox.ac.uk>
+  Copyright (C) 2003, 2004 Oliver Beckstein <orbeckst@jhmi.edu>
   This program is made available under the terms of the GNU Public License. 
   See the file LICENSE or http://www.gnu.org/copyleft/gpl.html
 
@@ -20,6 +20,7 @@
                                format change in the future)
   HEADER    str[HEADER_MAX]  # descriptive txt
   GRIDTYPE  enum             # currently we only have regular grids
+  TWEIGHT   real             # length of simulation time (ps) for the data
   DIMENSION int              # dim of array
   SIZE      int int ...      # number of cells per dim  \
   DELTA     real real ...    # grid width per dim        } allows reconstruction 
@@ -54,7 +55,7 @@ static char *SRCID_grid3D_h = "$Id$";
 #include <stdio.h>
 #include <stdlib.h>
 #include "typedefs.h"
-#include "fatal.h"
+#include "gmx_fatal.h"
 #include "xdr_grid.h"
 #include "count.h"
 #include "utilgmx.h"
@@ -65,6 +66,8 @@ typedef struct {
   int  mx[3];      /* MX, MY, MZ */
   real a[3], b[3]; /* bottom left and top right corner of the grid in nm */ 
   rvec Delta;      /* spatial resolution in nm */
+  real tweight;    /* length of simulation time (ps) for data; used as a */
+                   /* weight for combining grids in grid_calc.c */
 } t_tgrid;
 
 typedef struct {

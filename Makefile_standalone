@@ -2,7 +2,7 @@
 #
 # GNU Makefile to compile the grid counter outside the Gromacs source tree
 #
-#   Copyright (C) 2003, 2004 Oliver Beckstein <oliver@biop.ox.ac.uk>
+#   Copyright (C) 2003-2007 Oliver Beckstein <orbeckst@jhmi.edu>
 #   This program is made available under the terms of the GNU Public License. 
 #   See the file COPYING or http://www.gnu.org/copyleft/gpl.html
 #
@@ -15,19 +15,21 @@
 #
 #  DEBUG        compile with debugging, -g and no optimisations
 
-GMX_TOP_DIR     := /usr/local/gromacs
+# Set GMX_TOP_DIR to your Gromacs installation and check the
+# INCLUDE and LIB dir.
+GMX_TOP_DIR     := $(HOME)/Biop/Library/Gromacs/code/3.3.3
 
 # EXEC depends on your machine/OS
-GMX_EXEC_PREFIX := $(GMX_TOP_DIR)/i686-pc-linux-gnu#
+GMX_EXEC_PREFIX := $(GMX_TOP_DIR)/#
 GMX_LIB_DIR     := $(GMX_EXEC_PREFIX)/lib#
-GMX_INCLUDE_DIR := $(GMX_TOP_DIR)/include#
+GMX_INCLUDE_DIR := $(GMX_TOP_DIR)/include/gromacs#
 
 # install binaries into
 BIN_DIR := $(GMX_EXEC_PREFIX)/bin
 
 # This is only necessary for the creation of etags and can be safely ignored
 # (for compilation it is not important).
-GMX_SOURCE_DIR  := /usr/local/src/gmx
+GMX_SOURCE_DIR  := ~/Biop/Library/Gromacs/code/source/gromacs-3.3.3/src/
 #
 ##########################################################################
 
@@ -38,7 +40,8 @@ GMX_SOURCE_DIR  := /usr/local/src/gmx
 #
 NAME     := gridcount#
 RELEASE  := 1#
-MINOR    := 0#
+MINOR    := 1#
+REVISION := 3#
 
 CPPFLAGS += -I$(GMX_INCLUDE_DIR)
 
@@ -74,16 +77,25 @@ A_RI3DC_SRC := a_ri3Dc.c
 A_RI3DC_H   := 
 A_RI3DC_OBJ := a_ri3Dc.o
 
-ALL_PROG := $(G_RI3DC) $(A_RI3DC)
+# a_gridcalc
+A_GRIDCALC     := a_gridcalc 
+A_GRIDCALC_SRC := a_gridcalc.c 
+A_GRIDCALC_H   := 
+A_GRIDCALC_OBJ := a_gridcalc.o
 
-DIST_GRIDCOUNT_H   := $(sort  $(A_RI3DC_H) $(G_RI3DC_H) $(LIBGC_H))
-DIST_GRIDCOUNT_SRC := $(sort  $(A_RI3DC_SRC) $(G_RI3DC_SRC) $(LIBGC_SRC))
+ALL_PROG := $(G_RI3DC) $(A_RI3DC) $(A_GRIDCALC)
+
+DIST_GRIDCOUNT_H   := $(sort  $(A_RI3DC_H) $(A_GRIDCALC_H) \
+	$(G_RI3DC_H) $(LIBGC_H))
+DIST_GRIDCOUNT_SRC := $(sort  $(A_RI3DC_SRC) $(A_GRIDCALC_SRC) \
+	$(G_RI3DC_SRC) $(LIBGC_SRC))
 DIST_GRIDCOUNT_MAKE     := Makefile.am Makefile.in Makefile_standalone
-DIST_GRIDCOUNT_EXAMPLES := examples/Makefile.grid examples/slicer.pl
-DIST_GRIDCOUNT_DOCS     := README INSTALL
+DIST_GRIDCOUNT_EXAMPLES := examples/Makefile.grid examples/slicer.pl \
+	examples/window_density.pl
+DIST_GRIDCOUNT_DOCS     := README INSTALL FAQ
 
-DIST_DIR       := $(NAME)-$(RELEASE).$(MINOR)
-DIST_GRIDCOUNT := $(NAME)-$(RELEASE).$(MINOR).tar.gz 
+DIST_DIR       := $(NAME)-$(RELEASE).$(MINOR).$(REVISION)
+DIST_GRIDCOUNT := $(NAME)-$(RELEASE).$(MINOR).$(REVISION).tar.gz 
 
 
 define usage
@@ -133,6 +145,7 @@ help:
 
 
 $(LIBGC): $(LIBGC)($(LIBGC_OBJ)) $(LIBGC_H)
+	ranlib $@
 
 $(G_RI3DC): $(G_RI3DC_OBJ) $(LIBGC)
 	$(LD) -o $@ $^ $(LDFLAGS)
@@ -144,14 +157,19 @@ $(A_RI3DC): $(A_RI3DC_OBJ) $(LIBGC)
 $(A_RI3DC_OBJ): $(A_RI3DC_SRC) $(A_RI3DC_H)
 
 
+$(A_GRIDCALC): $(A_GRIDCALC_OBJ) $(LIBGC) 
+	$(LD) -o $@ $^ $(LDFLAGS)
+$(A_GRIDCALC_OBJ): $(A_GRIDCALC_SRC) $(A_GRIDCALC_H)
+
+
 TAGS: $(ALL_SOURCES)
 	etags *.c *.h 
 	find $(GMX_SOURCE_DIR) -name '*.[ch]' | xargs etags --append 
 
 
-.PHONY: clean distclean tar-clean install dist
+.PHONY: clean distclean tar-clean install dist rsync
 
-install:  $(G_RI3DC) $(A_RI3DC)
+install:  $(G_RI3DC) $(A_RI3DC) $(A_GRIDCALC)
 	for p in $^; do \
 	    if [ -e $$p ]; then  \
 	       echo ">>> Installing file \`$$p' ..."; \
@@ -185,6 +203,9 @@ $(DIST_GRIDCOUNT): FORCE
 
 tar-clean:
 	-rm -rf $(DIST_DIR) $(DIST_GRIDCOUNT)
+
+rsync: $(DIST_GRIDCOUNT)
+	rsync -avP $^ ompa.bioch.ox.ac.uk:/sansom/public_html/sbcb/oliver/download/Gromacs
 
 .phony: FORCE
 FORCE:

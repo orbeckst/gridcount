@@ -19,7 +19,7 @@
 # script, and Makefile.in is generated from Makefile.am by automake.
 
 
-SOURCES = $(libgridcount@LIBSUFFIX@_la_SOURCES) $(a_ri3Dc_SOURCES) $(g_ri3Dc_SOURCES)
+SOURCES = $(libgridcount@LIBSUFFIX@_la_SOURCES) $(a_gridcalc_SOURCES) $(a_ri3Dc_SOURCES) $(g_ri3Dc_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -42,7 +42,7 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-bin_PROGRAMS = g_ri3Dc$(EXEEXT) a_ri3Dc$(EXEEXT)
+bin_PROGRAMS = g_ri3Dc$(EXEEXT) a_ri3Dc$(EXEEXT) a_gridcalc$(EXEEXT)
 subdir = src/contrib/gridcount
 DIST_COMMON = README $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
 	INSTALL
@@ -64,10 +64,16 @@ libgridcount@LIBSUFFIX@_la_OBJECTS =  \
 	$(am_libgridcount@LIBSUFFIX@_la_OBJECTS)
 binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(bin_PROGRAMS)
+am_a_gridcalc_OBJECTS = a_gridcalc.$(OBJEXT)
+a_gridcalc_OBJECTS = $(am_a_gridcalc_OBJECTS)
+a_gridcalc_LDADD = $(LDADD)
+am__DEPENDENCIES_1 = libgridcount@LIBSUFFIX@.la
+a_gridcalc_DEPENDENCIES = $(am__DEPENDENCIES_1) \
+	./libgridcount@LIBSUFFIX@.la ../../mdlib/libmd@LIBSUFFIX@.la \
+	../../gmxlib/libgmx@LIBSUFFIX@.la
 am_a_ri3Dc_OBJECTS = a_ri3Dc.$(OBJEXT)
 a_ri3Dc_OBJECTS = $(am_a_ri3Dc_OBJECTS)
 a_ri3Dc_LDADD = $(LDADD)
-am__DEPENDENCIES_1 = libgridcount@LIBSUFFIX@.la
 a_ri3Dc_DEPENDENCIES = $(am__DEPENDENCIES_1) \
 	./libgridcount@LIBSUFFIX@.la ../../mdlib/libmd@LIBSUFFIX@.la \
 	../../gmxlib/libgmx@LIBSUFFIX@.la
@@ -80,7 +86,8 @@ g_ri3Dc_DEPENDENCIES = $(am__DEPENDENCIES_1) \
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/a_ri3Dc.Po ./$(DEPDIR)/count.Plo \
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/a_gridcalc.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/a_ri3Dc.Po ./$(DEPDIR)/count.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/g_ri3Dc.Po ./$(DEPDIR)/grid3D.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/plt.Plo ./$(DEPDIR)/utilgmx.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/xdr_grid.Plo ./$(DEPDIR)/xf.Plo
@@ -92,10 +99,10 @@ LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) \
 CCLD = $(CC)
 LINK = $(LIBTOOL) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(libgridcount@LIBSUFFIX@_la_SOURCES) $(a_ri3Dc_SOURCES) \
-	$(g_ri3Dc_SOURCES)
-DIST_SOURCES = $(libgridcount@LIBSUFFIX@_la_SOURCES) \
+SOURCES = $(libgridcount@LIBSUFFIX@_la_SOURCES) $(a_gridcalc_SOURCES) \
 	$(a_ri3Dc_SOURCES) $(g_ri3Dc_SOURCES)
+DIST_SOURCES = $(libgridcount@LIBSUFFIX@_la_SOURCES) \
+	$(a_gridcalc_SOURCES) $(a_ri3Dc_SOURCES) $(g_ri3Dc_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -226,6 +233,7 @@ libgridcount@LIBSUFFIX@_la_SOURCES = \
 
 g_ri3Dc_SOURCES = g_ri3Dc.c
 a_ri3Dc_SOURCES = a_ri3Dc.c  
+a_gridcalc_SOURCES = a_gridcalc.c  
 LDADD = $(lib_LTLIBRARIES) ./libgridcount@LIBSUFFIX@.la \
 	../../mdlib/libmd@LIBSUFFIX@.la \
 	../../gmxlib/libgmx@LIBSUFFIX@.la 
@@ -321,6 +329,9 @@ clean-binPROGRAMS:
 	  echo " rm -f $$p $$f"; \
 	  rm -f $$p $$f ; \
 	done
+a_gridcalc$(EXEEXT): $(a_gridcalc_OBJECTS) $(a_gridcalc_DEPENDENCIES) 
+	@rm -f a_gridcalc$(EXEEXT)
+	$(LINK) $(a_gridcalc_LDFLAGS) $(a_gridcalc_OBJECTS) $(a_gridcalc_LDADD) $(LIBS)
 a_ri3Dc$(EXEEXT): $(a_ri3Dc_OBJECTS) $(a_ri3Dc_DEPENDENCIES) 
 	@rm -f a_ri3Dc$(EXEEXT)
 	$(LINK) $(a_ri3Dc_LDFLAGS) $(a_ri3Dc_OBJECTS) $(a_ri3Dc_LDADD) $(LIBS)
@@ -334,6 +345,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/a_gridcalc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/a_ri3Dc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/count.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/g_ri3Dc.Po@am__quote@

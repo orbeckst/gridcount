@@ -37,7 +37,7 @@ static char *SRCID_a_ri3Dc_c = "$Id$";
 
    Purpose: 
 
-   analyse occupation maps (3D grids) produced by g_ri3Dc
+   analyse occupancy maps (3D grids) produced by g_ri3Dc
 
    Typically application: count water molecules, and determine the
    true solvent accessible volume of a pore.
@@ -77,6 +77,7 @@ static char *SRCID_a_ri3Dc_c = "$Id$";
 #define OCCUPIED_MIN 0       /* occupancy must be greater than this to
                                   be counted as occupied for volume
                                   calculations */
+#define RWATER 0.14          /* canonical radius of a water molecule */
 
 void update_tgrid (t_tgrid *);
 void tgrid2cavity (t_tgrid *, t_cavity *);
@@ -162,7 +163,7 @@ bool readjust_tgrid(t_tgrid *tg,t_cavity *g,int npa,t_pargs pa[]) {
   }
   /* sanity check .. post mortem ? */
   if (tg->a[ZZ] >= tg->b[ZZ]) 
-    fatal_error(0, "FAILURE: Apparently z2 =< z1, or either of them was too large "
+    gmx_fatal(FARGS, "FAILURE: Apparently z2 =< z1, or either of them was too large "
 		"for the given grid.");
 
   tgrid2cavity(tg,g);  /* overwrite radius from grid, finally set z1 
@@ -184,7 +185,7 @@ bool readjust_tgrid(t_tgrid *tg,t_cavity *g,int npa,t_pargs pa[]) {
      (2) copy pieces of the old grid into the new one
   */
   if (!setup_tgrid(tg,g,old.Delta))
-    fatal_error(0,"FAILURE while readjusting the grid.\n");
+    gmx_fatal(FARGS,"FAILURE while readjusting the grid.\n");
   
   /* Base = ((old.a - new->a)/Delta) -- beware rounding errors? */
   for(i=XX;i<DIM;i++) {
@@ -265,8 +266,9 @@ int main(int argc,char *argv[])
     "               R*(z)^2 = 2 Int_0^2pi dphi Int_0^R dr r^3 n(r,phi,z)/"
     "Int drho dphi r n(r,phi,z)\n"
     "This radius is a good approximation to the "
-    "pore profile (eg compared to HOLE). The density itself is in the "
-    "lzdf.xvg file."
+    "pore profile (eg compared to HOLE). It describes the solvent accessible surface (SAS) "
+    "of the pore because the density is based on the centres of the molecules. "
+    "The density itself is in the lzdf.xvg file."
     "[PAR]For diagnostic purposes one can also plot the radial distributions of "
     "the unoccupied cells (holes in the grid) in order to find suitable grid "
     "spacings.\n"
@@ -300,7 +302,7 @@ int main(int argc,char *argv[])
   static bool bDoHoles = FALSE;          /* use instead of giving fns
                                             explixitly */
   static char *DensUnitStr[] = 
-         { NULL, "unity", "SPC", "molar", "Angstrom", NULL };
+    { NULL, "unity", "SPC", "molar", "Angstrom", "Voxel", NULL };
   static rvec Delta = {0.02,0.02,0.02};  /* resolution in nm for
                                             coarse graining */
   static int  rad_ba_nr =   RAD_BA_NR;   /* block average of radial
@@ -313,6 +315,7 @@ int main(int argc,char *argv[])
    observation that densities for water in excess of 1.5 n_bulk rarely
    occur) */
   static real maxDensity = 48.48405;
+  static real rsolvent=RWATER; /* radius of a solvent molecule or ion */
 
 
   t_pargs pa[] = {
@@ -322,22 +325,26 @@ int main(int argc,char *argv[])
       "Center grid between z1, and ..."},
     { "-z2",     FALSE, etREAL, {&(geometry.z2)},
       "z2 (these boundaries are kept fixed!)"},
-    { "-delta",  FALSE, etRVEC, {&(Delta)},
+    { "-delta",  FALSE, etRVEC, {&Delta},
       "HIDDENSpatial resolution in X, Y, and Z for resampling (in nm)"},
     { "-minocc",   FALSE, etREAL, {&min_occ},
       "HIDDENThe occupancy of a  cell must be larger than this number so that it is "
       "counted as occupied when calculating the volume, effective radius "
       "and local density axial distribution -lzdf. This is given in the chosen "
       "units (see -unit)."},
+    { "-rsolvent", FALSE, etREAL, {&rsolvent},
+      "HIDDENradius of a solvent moelecule or ion; used to incorporate "
+      "the excluded volume in n(z) and is shown in the 3rd column in lzdf"},
     { "-subtitle", FALSE, etSTR, {&header},
       "Some text to add to the output graphs"},
     { "-mirror", FALSE, etBOOL, {&bMirror},
       "mirror the radial projection P(r,z) to create the impression of a "
       "full view of the pore"},
     { "-unit", FALSE, etENUM, {DensUnitStr},
-      "divide number density (in nm^-3) by 1, the density of SPC "
-      "water at 300K and 1 bar, in mol/l or in "
-      "Angstrom^-3. Allowed values"},
+      "output density as number density (in nm^-3), "
+      "relative to the density of SPC water at 300K and 1 bar, "
+      "in mol/l, in Angstrom^-3, "
+      "or as the number per Voxel. Allowed values"},
     { "-xfarbe-maxlevel", FALSE, etREAL, {&maxDensity},
       "xfarbe will plot 15 equally space level up to this density (the unit must "
       "be the same as for the -unit option!) Default is 1.5 SPC bulk." },
@@ -392,6 +399,7 @@ int main(int argc,char *argv[])
   int nocc;         /* number of occupied (> min_occ) cells */
   real Rgyr2;       /* 'radius of gyration' squared for occupied cells */
   real Agyr;        /* area Agyr = pi * Rgyr^2 */  
+  /* used to approximate the excluded volume */
   double dV;        /* volume of a cell */
   real height;      /* z2 - z1 */
   real volume = 0;
@@ -434,6 +442,7 @@ int main(int argc,char *argv[])
     */
   }
 
+
   /* select the unit (DensUnit[nunit]) for the density plots */
   switch (DensUnitStr[0][0]) {
   case 'S': /*SPC water at 300K, 1 bar */
@@ -445,24 +454,22 @@ int main(int argc,char *argv[])
   case 'A': /* in Angstrom^-3 */
     nunit = eduANG;
     break;
+  case 'V': /* Voxel probability, multiply by cell volume in nm^-3 */
+    /* Note that DensUnit[eduVOXELPROB] must be set after reading the
+       grid (or resampling) because the Voxel probability unit is
+       computed from the cell volume) */       
+    nunit = eduVOXELPROB;
+    break;
   case 'u': /* unity */
   default:
     nunit = eduUNITY;
   } /*end switch */
 
-  min_occ *= DensUnit[nunit]; /* compare filling of cell in chosen unit */
-
-  if(!opt2parg_bSet("-xfarbe-maxlevel",NPA,pa)) {
-    maxDensity /= DensUnit[nunit];
-    dmsg("Converted the default xfarbe-maxlevel: %f %s\n",
-	 maxDensity, EDENSUNITTYPE(nunit));
-  }
-
-  /* open input file */
+  /* open input file  */
   msg("Reading grid 3D file...\n");
   fGrid    = ffopen (opt2fn("-grid", NFILE, fnm), "r");
   if (!grid_read(fGrid,&tgrid,header)) 
-    fatal_error(0,"Error reading the 3D grid---no point in continuing!\n");
+    gmx_fatal(FARGS,"Error reading the 3D grid---no point in continuing!\n");
   update_tgrid(&tgrid);
   fclose(fGrid);
   msg(".. done!\n");
@@ -479,41 +486,9 @@ int main(int argc,char *argv[])
     dmsg("Warning: Delta[XX]=%.4f != Delta[YY]=%.4f, setting DeltaR=%.4f\n",
 	 tgrid.Delta[XX], tgrid.Delta[YY], DeltaR);
 
-  /* setup proj */
-  if (!(xyp=grid2_alloc(tgrid.mx[XX],tgrid.mx[YY])) ||
-      !(xzp=grid2_alloc(tgrid.mx[XX],tgrid.mx[ZZ])) ||
-      !(yzp=grid2_alloc(tgrid.mx[YY],tgrid.mx[ZZ])))
-    fatal_error (-1,"FAILED: allocating memory for the projection maps\n");
+  /* grid diagnostics and normalisations */
 
-  /* setup axial distribution (zdf) and profile  
-     We are wasting memory because the x-column is identical for all of them
-     but its conceptually simpler.
-   */
-  if (! (zdf=grid2_alloc(tgrid.mx[ZZ],2)) ||
-      ! (lzdf=grid2_alloc(tgrid.mx[ZZ],2)) ||
-      ! (profile=grid2_alloc(tgrid.mx[ZZ],2)))
-    fatal_error (-1,"FAILED: allocating memory for the axial "
-		 "distribution functions or the profile\n");
-
-  /* setup radial distributions (rdf and rzprojection)   */
-  iradNR = (int)floor(geometry.radius/DeltaR);
-  snew(rweight,iradNR);
-  if (!rweight || !(rdf=grid2_alloc(iradNR,2)))
-    fatal_error (-1,"FAILED: allocating memory for the radial "
-		 "distribution function\n");
-	
-  if (!(rzp=grid2_alloc(iradNR,tgrid.mx[ZZ])))
-    fatal_error (-1,"FAILED: allocating memory for the rz projection map\n");
-
-  /* hole distributions */
-  if (!(hrdf=grid2_alloc(iradNR,2)) || 
-      !(hrzp=grid2_alloc(iradNR,tgrid.mx[ZZ])) ||
-      !(hxyp=grid2_alloc(tgrid.mx[XX],tgrid.mx[YY])))
-    fatal_error(-1,"FAILED: allocating memory for the hole distributions\n");
-
-  /* for the volume calculation only look at cells within the circle
-     of the original radius so that a comparison between this radius
-     and the effective radius is meaningful */
+  dV = DeltaV(&tgrid);
 
   /* the grid output is a number density. Unit nm^-3   */
   /* sum over the whole grid (for the integral, multiply by dV) */
@@ -524,13 +499,63 @@ int main(int argc,char *argv[])
 	sumP += (double) tgrid.grid[i][j][k];
 	if (tgrid.grid[i][j][k] <= min_occ)  sumH++;
       }
-  dV = DeltaV(&tgrid);
+
   sumP *= dV;     /* dont forget the dV ... */
   sumH *= dV;
   dmsg("Integrals over the whole grid:\n"
        "  sumP = <<N>>     = Sum_ijk dV*n[ijk] = %.2f\n"
        "  sumH = <<holes>> = Sum_ijk dV*h[ijk] = %.2f\n",
        sumP,sumH);
+
+  /* density stuff that may rely on the grid; Note: if resampling is
+     implemented, this must be done after resampling, too */
+  DensUnit[eduVOXELPROB] = dV;
+  min_occ *= DensUnit[nunit]; /* compare filling of cell in chosen unit */
+
+
+  if(!opt2parg_bSet("-xfarbe-maxlevel",NPA,pa)) {
+    maxDensity /= DensUnit[nunit];
+    dmsg("Converted the default xfarbe-maxlevel: %f %s\n",
+	 maxDensity, EDENSUNITTYPE(nunit));
+  }
+
+
+  /* setup proj */
+  if (!(xyp=grid2_alloc(tgrid.mx[XX],tgrid.mx[YY])) ||
+      !(xzp=grid2_alloc(tgrid.mx[XX],tgrid.mx[ZZ])) ||
+      !(yzp=grid2_alloc(tgrid.mx[YY],tgrid.mx[ZZ])))
+    gmx_fatal(FARGS,"FAILED: allocating memory for the projection maps\n");
+
+  /* setup axial distribution (zdf) and profile  
+     We are wasting memory because the x-column is identical for all of them
+     but its conceptually simpler.
+   */
+  if (! (zdf=grid2_alloc(tgrid.mx[ZZ],2)) ||
+      ! (lzdf=grid2_alloc(tgrid.mx[ZZ],2)) ||
+      ! (profile=grid2_alloc(tgrid.mx[ZZ],2)))
+    gmx_fatal(FARGS,"FAILED: allocating memory for the axial "
+		 "distribution functions or the profile\n");
+
+  /* setup radial distributions (rdf and rzprojection)   */
+  iradNR = (int)floor(geometry.radius/DeltaR);
+  snew(rweight,iradNR);
+  if (!rweight || !(rdf=grid2_alloc(iradNR,2)))
+    gmx_fatal(FARGS,"FAILED: allocating memory for the radial "
+		 "distribution function\n");
+	
+  if (!(rzp=grid2_alloc(iradNR,tgrid.mx[ZZ])))
+    gmx_fatal(FARGS,"FAILED: allocating memory for the rz projection map\n");
+
+  /* hole distributions */
+  if (!(hrdf=grid2_alloc(iradNR,2)) || 
+      !(hrzp=grid2_alloc(iradNR,tgrid.mx[ZZ])) ||
+      !(hxyp=grid2_alloc(tgrid.mx[XX],tgrid.mx[YY])))
+    gmx_fatal(FARGS,"FAILED: allocating memory for the hole distributions\n");
+
+  /* for the volume calculation only look at cells within the circle
+     of the original radius so that a comparison between this radius
+     and the effective radius is meaningful */
+
     
   /* NB:     Integral_L dx f(x) =       Sum_i DELTAx f_i
          1/L Integral_L dx f(x) = 1/n_x Sum_i        f_i
@@ -634,7 +659,7 @@ int main(int argc,char *argv[])
       }
     }
     /* zdf --  z at the center of each cell --> +0.5 
-       & normalise
+       & normalise by the area (square disks -> Lx * Ly)
     */
     zdf[k][0]  = tgrid.a[ZZ] + (k+0.5)*tgrid.Delta[ZZ];
     zdf[k][1] /= (real)tgrid.mx[XX]*(real)tgrid.mx[YY] * DensUnit[nunit];
@@ -850,13 +875,13 @@ int main(int argc,char *argv[])
   */
 
   /* (1) axial distribution P(z) */
-  snprintf(s_tmp,STRLEN,"n(z) [%s]",EDENSUNITTYPE(nunit));
+  snprintf(s_tmp,STRLEN,"n(z) [%s], PMF G(z)/kT",EDENSUNITTYPE(nunit));
   fOut = xmgropen (opt2fn("-zdf",NFILE,fnm),
 		       "Axial distribution function n(z)",
 		       header, "z [nm]", s_tmp);
   for(k=0;k<tgrid.mx[ZZ];k++) {
-    fprintf (fOut,"%.6f   %.6f\n",
-	     zdf[k][0],zdf[k][1]);
+    fprintf (fOut,"%.6f   %.6f   %.6f\n",
+	     zdf[k][0],zdf[k][1],-log(zdf[k][1]));
   };
   fclose(fOut);
 
@@ -865,9 +890,12 @@ int main(int argc,char *argv[])
 		       "Local density axial distribution function n\\slocal\\N(z)",
 		       header, "z [nm]", s_tmp);
   for(k=0;k<tgrid.mx[ZZ];k++) {
-    fprintf (fOut,"%.6f   %.6f\n",
-	     lzdf[k][0],lzdf[k][1]); 
-             /* z p(z)  rgyr(z) rgyr(z)/R */
+    fprintf (fOut,"%.6f   %.6f  %.6f  %.6f\n",
+	     lzdf[k][0],lzdf[k][1],
+             lzdf[k][1]/(1+sqr(rsolvent/profile[k][1])),
+	     -log(lzdf[k][1]) ); 
+             /* z  n(z) n'(z) G(z)/kT
+              where n'(z) = N(z)/pi*(Rgyr+r)^2 with r: radius of solvent */
   };
   fclose(fOut);
 
@@ -925,7 +953,7 @@ int main(int argc,char *argv[])
 
 
   /* write parameter file for xfarbe 
-     see https://indigo1.biop.ox.ac.uk/xfarbe/html/#xfarbe.file
+     see http://www.fhi-berlin.mpg.de/~grz/pub/xfarbe.html
   */
   xf_write_XFarbe(XFARBE_NCOLS);
 

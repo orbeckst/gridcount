@@ -1,26 +1,24 @@
-# $Id$
-#
 # GNU Makefile to compile the grid counter outside the Gromacs source tree
 #
-#   Copyright (C) 2003-2007 Oliver Beckstein <orbeckst@jhmi.edu>
+#   Copyright (C) 2003-2010 Oliver Beckstein <orbeckst@gmailcom>
 #   This program is made available under the terms of the GNU Public License. 
 #   See the file COPYING or http://www.gnu.org/copyleft/gpl.html
 #
 # Edit BIN_DIR and the GMX_* variables to reflect the locations in
-# your setup. Run 'make -f Makefile_standalone help' for, um, help.
+# your setup. Run 'make help' for, um, help.
 #
 # Makefile switches:
 # Switch on on commandline by setting them, eg 
-#        make -f Makefile_standalone DEBUG=1  g_ri3Dc 
+#        make DEBUG=1  g_ri3Dc 
 #
 #  DEBUG        compile with debugging, -g and no optimisations
 
 # Set GMX_TOP_DIR to your Gromacs installation and check the
 # INCLUDE and LIB dir.
-GMX_TOP_DIR     := $(HOME)/Biop/Library/Gromacs/code/3.3.3
+GMX_TOP_DIR     := $(HOME)/Library/Gromacs/version/4.0.2
 
 # EXEC depends on your machine/OS
-GMX_EXEC_PREFIX := $(GMX_TOP_DIR)/#
+GMX_EXEC_PREFIX := $(GMX_TOP_DIR)/`config.guess`
 GMX_LIB_DIR     := $(GMX_EXEC_PREFIX)/lib#
 GMX_INCLUDE_DIR := $(GMX_TOP_DIR)/include/gromacs#
 
@@ -29,7 +27,7 @@ BIN_DIR := $(GMX_EXEC_PREFIX)/bin
 
 # This is only necessary for the creation of etags and can be safely ignored
 # (for compilation it is not important).
-GMX_SOURCE_DIR  := ~/Biop/Library/Gromacs/code/source/gromacs-3.3.3/src/
+GMX_SOURCE_DIR  := 
 #
 ##########################################################################
 
@@ -38,10 +36,11 @@ GMX_SOURCE_DIR  := ~/Biop/Library/Gromacs/code/source/gromacs-3.3.3/src/
 # Probably no need to touch anything below this line. All important paths
 # can be set above, and you can use CFLAGS and LDFLAGS in the environment.
 #
+# New numbering scheme: NAME-GMXBASE-MAJOR.MINOR
 NAME     := gridcount#
-RELEASE  := 1#
-MINOR    := 1#
-REVISION := 3#
+GMXBASE  := gmx4.0
+MAJOR    := 1#
+MINOR    := 0#
 
 CPPFLAGS += -I$(GMX_INCLUDE_DIR)
 
@@ -89,18 +88,20 @@ DIST_GRIDCOUNT_H   := $(sort  $(A_RI3DC_H) $(A_GRIDCALC_H) \
 	$(G_RI3DC_H) $(LIBGC_H))
 DIST_GRIDCOUNT_SRC := $(sort  $(A_RI3DC_SRC) $(A_GRIDCALC_SRC) \
 	$(G_RI3DC_SRC) $(LIBGC_SRC))
-DIST_GRIDCOUNT_MAKE     := Makefile.am Makefile.in Makefile_standalone
+DIST_GRIDCOUNT_MAKE     := Makefile
 DIST_GRIDCOUNT_EXAMPLES := examples/Makefile.grid examples/slicer.pl \
 	examples/window_density.pl
-DIST_GRIDCOUNT_DOCS     := README INSTALL FAQ
+DIST_GRIDCOUNT_DOCS     := README INSTALL FAQ CHANGELOG
+DIST_GRIDCOUNT_DIRS     := contrib
 
-DIST_DIR       := $(NAME)-$(RELEASE).$(MINOR).$(REVISION)
-DIST_GRIDCOUNT := $(NAME)-$(RELEASE).$(MINOR).$(REVISION).tar.gz 
+DIST_NAME      := $(NAME)-$(GMXBASE)-$(MAJOR).$(MINOR)
+DIST_DIR       := $(DIST_NAME)
+DIST_GRIDCOUNT := $(DIST_NAME).tar.gz 
 
 
 define usage
 \nIn order to compile programs edit the Makefile for paths to the Gromacs\
-\nlibraries. Then do \
+\nlibraries (release $(GMXBASE)). Then do \
 \n   make clean; make PROGRAM\
 \nwhere PROGRAM can be one of \`$(ALL_PROG)'.\
 \nPerhaps you have to edit variables at the top of the Makefile \
@@ -198,6 +199,7 @@ $(DIST_GRIDCOUNT): FORCE
 	cp $(DIST_GRIDCOUNT_H) $(DIST_GRIDCOUNT_SRC) $(DIST_DIR)
 	cp $(DIST_GRIDCOUNT_DOCS) $(DIST_GRIDCOUNT_MAKE) $(DIST_DIR)
 	cp $(DIST_GRIDCOUNT_EXAMPLES) $(DIST_DIR)/examples
+	cp -r $(DIST_GRIDCOUNT_DIRS) $(DIST_DIR)
 	tar -zcvf $@ $(DIST_DIR)
 	-rm -r $(DIST_DIR)
 
@@ -205,7 +207,7 @@ tar-clean:
 	-rm -rf $(DIST_DIR) $(DIST_GRIDCOUNT)
 
 rsync: $(DIST_GRIDCOUNT)
-	rsync -avP $^ ompa.bioch.ox.ac.uk:/sansom/public_html/sbcb/oliver/download/Gromacs
+	rsync -avP $^ clathrin:/sansom/public_html/sbcb/oliver/download/Gromacs
 
 .phony: FORCE
 FORCE:

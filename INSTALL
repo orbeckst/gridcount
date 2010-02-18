@@ -1,34 +1,60 @@
-$Id$
 Grid counter g_ri3Dc and analysis tools a_ri3Dc and a_gridcalc
-Copyright (C) 2004-2008 Oliver Beckstein <orbeckst@gmail.com>
+Copyright (C) 2004-2010 Oliver Beckstein <orbeckst@gmail.com>
 Released under the GNU Public License (see README)
+
+
+Compatibility with Gromacs
+==========================
+
+Every version of Gromacs introduces some changes that lead to some
+incompatibilities. Therefore, there are specific version of gridcount
+for different versions of Gromacs.
+
+The gridcount  version that comes with this file is for stable
+
+    Gromacs 4.0.x
+
+releases.
+
+Other version of gridcount can be found on the website (see README).
+
+
 
 
 Installation and Compilation 
 ============================
 
 There are two ways to compile (and install the programs). The first
-uses the configuration and compilation process of the full Gromacs
-source tree (see `As contributed software'), the second only requires
-you to have the Gromacs include files and libgmx and libmd installed
-(`Standalone').  
+variant only requires you to have the Gromacs include files and libgmx
+and libmd installed (`Standalone').  The second uses the configuration
+and compilation process of the full Gromacs source tree (see `As
+contributed software').
 
 Both programs utilise a number of common routines so it was natural to
 bundle them in a small library, libgridcount. 
 
-The 1.0 version of these programs were compiled and tested with
-Gromacs 3.1.4 and Gromacs 3.2.1 under Red Hat 8.0 Linux and Debian
-Linux.
 
-The current 1.1.1 version was quickly modified to compile with Gromacs
-3.3.1 (tested on Mac OS X). Because it uses gmx_fatal() instead of
-fatal_error() it probably won't compile with older Gromacs versions
-(pre 3.3 I imagine).
+Standalone
+----------
 
-The 1.1.3 version compiles with Gromacs 3.3.3 (tested on Mac OS
-X). (Sorry, I don't have the time to make versions properly backward
-compatible with older Gromacs versions. Just email me if you have
-problems.)
+In order to compile the programs in this directory on their own you
+will need an existing gromacs installation, i.e. the header files and
+the libmd and libgmx libraries.
+
+(1) Edit `Makefile (perhaps different BIN_DIR path for
+    install, location of the libgmx and libmd libraries and header
+    files, ...)
+
+    `make help' shows your current settings.
+
+(2) Compile the programs
+    
+       make
+
+(3)  Install
+      
+       make install
+
 
 As contributed software
 -----------------------
@@ -43,6 +69,9 @@ As contributed software
        cd src/contrib
        tar -zxvf gridcount-1.0.tar.gz 
        mv gridcount-1.0 gridcount
+       cd gridcount
+       rm Makefile
+       cp contrib/Makefile.* .
 
 (1c) Integrate gridcount into the autoconf process of the source tree:  
      * Add `src/contrib/gridcount/Makefile' to `AC_CONFIG_FILES' in 
@@ -73,26 +102,6 @@ As contributed software
 
 
 
-Standalone
-----------
-
-In order to compile the programs in this directory on their own you
-will need an existing gromacs installation, i.e. the header files and
-the libmd and libgmx libraries.
-
-(1) Edit `Makefile_standalone' (perhaps different BIN_DIR path for
-    install, location of the libgmx and libmd libraries and header
-    files, ...)
-
-    `make -f Makefile_standalone help' shows your current settings.
-
-(2) Compile the programs
-    
-       make -f Makefile_standalone
-
-(3)  Install
-      
-       make -f Makefile_standalone install
     
 
 Problems 

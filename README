@@ -1,5 +1,7 @@
 Grid counter g_ri3Dc and analysis tool a_ri3Dc
 Copyright (C) 2003-2008 Oliver Beckstein <orbeckst@gmail.com>
+Published under the GNU General Public License version 2 (or higher)
+
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -78,9 +80,16 @@ Beckstein and Sansom, PNAS 100 (2003), 7063 and Beckstein and Sansom,
 Phys Biol 1 (2004), 43, http://stacks.iop.org/1478-3975/1/42 or
 http://arxiv.org/abs/q-bio/0402041. 
 
-The latest version is available at 
-http://sbcb.bioch.ox.ac.uk/oliver/software/#gridcount ; at some point
-I might even add some documentation...
+
+The latest version of gridcount is available at 
+
+   http://sbcb.bioch.ox.ac.uk/oliver/software/#gridcount
+
+
+A version history can be found in the file CHANGELOG.
+
+Questions from users and (more or less) helpful answers are in the
+file FAQ.
 
 
 

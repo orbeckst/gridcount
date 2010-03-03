@@ -1,5 +1,5 @@
 Grid counter g_ri3Dc and analysis tool a_ri3Dc
-Copyright (C) 2003-2008 Oliver Beckstein <orbeckst@gmail.com>
+Copyright (C) 2003-2010 Oliver Beckstein <orbeckst@gmail.com>
 Published under the GNU General Public License version 2 (or higher)
 
 
@@ -75,7 +75,7 @@ itself...). The examples/Makefile.grid shows real-life usage and has
 instructions for usage in the comments at the top.
 
 Examples of figures created with these programs can be found on
-http://sansom.biop.ox.ac.uk/oliver/research/pores/hyphobpores.html#liquidvapourosc,
+http://sbcb.bioch.ox.ac.uk/oliver/research/pores/hyphobpores.html#liquidvapourosc,
 Beckstein and Sansom, PNAS 100 (2003), 7063 and Beckstein and Sansom,
 Phys Biol 1 (2004), 43, http://stacks.iop.org/1478-3975/1/42 or
 http://arxiv.org/abs/q-bio/0402041. 
@@ -96,7 +96,7 @@ file FAQ.
 Additional software
 ===================
 
-Gromacs   http://www.gromacs.org (version 3.x) 
+Gromacs   http://www.gromacs.org (version 4.x) 
 xfarbe    http://www.fhi-berlin.mpg.de/~grz/pub/xfarbe.html
 VMD       http://www.ks.uiuc.edu/Research/vmd/
 gOpenMol  http://www.csc.fi/gopenmol/
@@ -129,14 +129,6 @@ BUGs and such
 
 TODO
 ====
-
-* libgridcount should not really be installed but I couldn't figure
-  out how to use automake to only build a local static version. It was
-  easier to use standard libtool...
-
-  This library is not tested for anything else than collecting an
-  otherwise increasing number of small object files during building of
-  the main programs.
 
 * Resampling of the grid (ie coarse graining) should be possible in
   a_ri3Dc but it isn't (yet).

@@ -24,18 +24,12 @@ Other version of gridcount can be found on the website (see README).
 Installation and Compilation 
 ============================
 
-There are two ways to compile (and install the programs). The first
-variant only requires you to have the Gromacs include files and libgmx
-and libmd installed (`Standalone').  The second uses the configuration
-and compilation process of the full Gromacs source tree (see `As
-contributed software').
+In order to compile the code you need to have the Gromacs include
+files and libgmx and libmd installed.
 
 Both programs utilise a number of common routines so it was natural to
 bundle them in a small library, libgridcount. 
 
-
-Standalone
-----------
 
 In order to compile the programs in this directory on their own you
 will need an existing gromacs installation, i.e. the header files and
@@ -54,53 +48,6 @@ the libmd and libgmx libraries.
 (3)  Install
       
        make install
-
-
-As contributed software
------------------------
-
-(1)  If you received gridcount as a part of the Gromacs sources then
-     you are currently in `src/contrib/gridcount' and you will
-     likely have a file `Makefile.in': You can fast-forward to step 2.
-
-(1b) If you don't have the src/contrib/gridcount directory then place
-     the `gridcount' directory  into `src/contrib', eg
-
-       cd src/contrib
-       tar -zxvf gridcount-1.0.tar.gz 
-       mv gridcount-1.0 gridcount
-       cd gridcount
-       rm Makefile
-       cp contrib/Makefile.* .
-
-(1c) Integrate gridcount into the autoconf process of the source tree:  
-     * Add `src/contrib/gridcount/Makefile' to `AC_CONFIG_FILES' in 
-       config.ac in the top directory.        
-     * Bootstrap your sources (requires the development
-       tools). Execute in the top directory
-
-         automake && autoconf
-
-     You should now have `Makefile.in' in the gridcount.directory
-       
-(2)  Configure the source tree as usual, ie `./configure ...'  or if
-     you have done this already a simple `./config.status' should
-     suffice.
-
-(3)  Build Gromacs (or if you already have done so, skip to (4))
-
-(4)  Build gridcount (which is not done by default):
-      
-         cd src/contrib/gridcount
-         make
-
-(5)  Install
-
-         make install
-    
-     (sorry, this also installs libgridcount even if it is not needed)
-
-
 
     
 

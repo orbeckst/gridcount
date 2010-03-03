@@ -1,4 +1,4 @@
-# GNU Makefile to compile the grid counter outside the Gromacs source tree
+# GNU Makefile to compile the grid counter
 #
 #   Copyright (C) 2003-2010 Oliver Beckstein <orbeckst@gmailcom>
 #   This program is made available under the terms of the GNU Public License. 
@@ -17,16 +17,19 @@
 # INCLUDE and LIB dir.
 GMX_TOP_DIR     := $(HOME)/Library/Gromacs/version/4.0.2
 
-# EXEC depends on your machine/OS
-GMX_EXEC_PREFIX := $(GMX_TOP_DIR)/`config.guess`
-GMX_LIB_DIR     := $(GMX_EXEC_PREFIX)/lib#
-GMX_INCLUDE_DIR := $(GMX_TOP_DIR)/include/gromacs#
+# Set the directories where Gromacs executables and libraries are 
+# to be found. GMX_EXEC_PREFIX will probably depend on your OS;
+# use "$(ARCH)" if you have versions for different architectures installed:
+GMX_EXEC_PREFIX = $(GMX_TOP_DIR)/$(ARCH)
+GMX_LIB_DIR     = $(GMX_EXEC_PREFIX)/lib
+# Include directory for Gromacs header files:
+GMX_INCLUDE_DIR = $(GMX_TOP_DIR)/include/gromacs
 
 # install binaries into
-BIN_DIR := $(GMX_EXEC_PREFIX)/bin
+BIN_DIR = $(GMX_EXEC_PREFIX)/bin
 
-# This is only necessary for the creation of etags and can be safely ignored
-# (for compilation it is not important).
+# GMX_SOURCE_DIR is only necessary for the creation of etags and 
+# can be safely ignored (for compilation it is not important).
 GMX_SOURCE_DIR  := 
 #
 ##########################################################################
@@ -40,9 +43,18 @@ GMX_SOURCE_DIR  :=
 NAME     := gridcount#
 GMXBASE  := gmx4.0
 MAJOR    := 1#
-MINOR    := 0#
+MINOR    := 1#
 
-CPPFLAGS += -I$(GMX_INCLUDE_DIR)
+export PROJECTDIR := $(realpath .)
+export INCLUDEDIR := $(PROJECTDIR)/include
+export SRCDIR     := $(PROJECTDIR)/src
+export SCRIPTSDIR := $(PROJECTDIR)/scripts
+export BIN_DIR
+
+ARCH := $(shell $(SCRIPTSDIR)/config.guess)
+
+CPPFLAGS += -I$(INCLUDEDIR) -I$(GMX_INCLUDE_DIR)
+export CPPFLAGS
 
 ifdef DEBUG
 CFLAGS   +=  -DDEBUG -g -Wall  -Wno-unused 
@@ -50,49 +62,22 @@ else
 CFLAGS   +=  -g -O2 -fomit-frame-pointer -finline-functions \
              -funroll-loops -Wall -Wno-unused 
 endif
+export CFLAGS
 
 LDFLAGS  +=  -lm -L$(GMX_LIB_DIR) -lmd -lgmx 
+export LDFLAGS
 
-CC      := gcc
-LD      := $(CC)
-INSTALL := install
-
-LIBGC     := libgridcount.a
-LIBGC_NAMES :=  utilgmx xf plt count grid3D xdr_grid
-LIBGC_SRC := $(addsuffix .c, $(LIBGC_NAMES))
-LIBGC_H   := $(addsuffix .h, $(LIBGC_NAMES)) gridcount.h
-LIBGC_OBJ := $(addsuffix .o, $(LIBGC_NAMES))
+export CC      := gcc
+export LD      := $(CC)
+export INSTALL := install
 
 
-# g_ri3Dc
-G_RI3DC     := g_ri3Dc 
-G_RI3DC_SRC := g_ri3Dc.c 
-G_RI3DC_H   := 
-G_RI3DC_OBJ := g_ri3Dc.o 
-
-# a_ri3Dc
-A_RI3DC     := a_ri3Dc 
-A_RI3DC_SRC := a_ri3Dc.c 
-A_RI3DC_H   := 
-A_RI3DC_OBJ := a_ri3Dc.o
-
-# a_gridcalc
-A_GRIDCALC     := a_gridcalc 
-A_GRIDCALC_SRC := a_gridcalc.c 
-A_GRIDCALC_H   := 
-A_GRIDCALC_OBJ := a_gridcalc.o
-
-ALL_PROG := $(G_RI3DC) $(A_RI3DC) $(A_GRIDCALC)
-
-DIST_GRIDCOUNT_H   := $(sort  $(A_RI3DC_H) $(A_GRIDCALC_H) \
-	$(G_RI3DC_H) $(LIBGC_H))
-DIST_GRIDCOUNT_SRC := $(sort  $(A_RI3DC_SRC) $(A_GRIDCALC_SRC) \
-	$(G_RI3DC_SRC) $(LIBGC_SRC))
-DIST_GRIDCOUNT_MAKE     := Makefile config.guess
+DIST_GRIDCOUNT_H   := $(basename $(INCLUDEDIR))
+DIST_GRIDCOUNT_SRC := $(basename $(SRCDIR))
+DIST_GRIDCOUNT_MAKE     := Makefile $(basename $(SCRIPTSDIR))
 DIST_GRIDCOUNT_EXAMPLES := examples/Makefile.grid examples/slicer.pl \
 	examples/window_density.pl
 DIST_GRIDCOUNT_DOCS     := README INSTALL FAQ CHANGELOG
-DIST_GRIDCOUNT_DIRS     := contrib
 
 DIST_NAME      := $(NAME)-$(GMXBASE)-$(MAJOR).$(MINOR)
 DIST_DIR       := $(DIST_NAME)
@@ -102,8 +87,8 @@ DIST_GRIDCOUNT := $(DIST_NAME).tar.gz
 define usage
 \nIn order to compile programs edit the Makefile for paths to the Gromacs\
 \nlibraries (release $(GMXBASE)). Then do \
-\n   make clean; make PROGRAM\
-\nwhere PROGRAM can be one of \`$(ALL_PROG)'.\
+\n   make clean; make all\
+\n\
 \nPerhaps you have to edit variables at the top of the Makefile \
 \nto make it work. Programs are statically linked so you can take the \
 \nbinaries wherever you like (hopefully...).\
@@ -113,10 +98,10 @@ define usage
 \nor set BIN_DIR at the top of the Makefile.\
 \n\
 \nInstall targets: \
-\n   all          compile \`$(ALL_PROG)' (default)\
+\n   all          compile everything (default)\
 \n   install      install all compiled programs in BIN_DIR\
 \n   clean        clean object files etc\
-\n   distclean    remove every generated file\
+\n   dist-clean   remove every generated file\
 \n\
 \nMakefile switches:\
 \nSwitch on on commandline by setting them, eg \`make DEBUG=1 g_ri3Dc' \
@@ -138,52 +123,26 @@ define usage
 endef
 # 'emacs font-lock
 
-.PHONY: all help 
-all:	$(ALL_PROG)
+.PHONY: all install help clean dist-clean
+all:
+	cd $(SRCDIR) && $(MAKE) $@
+
+install:
+	cd $(SRCDIR) && $(MAKE) $@
+
+clean:
+	cd $(SRCDIR) && $(MAKE) $@
+
+dist-clean: tar-clean
+	cd $(SRCDIR) && $(MAKE) $@
+	rm -f TAGS
 
 help:
 	@echo -e "$(usage)"
 
-
-$(LIBGC): $(LIBGC)($(LIBGC_OBJ)) $(LIBGC_H)
-	ranlib $@
-
-$(G_RI3DC): $(G_RI3DC_OBJ) $(LIBGC)
-	$(LD) -o $@ $^ $(LDFLAGS)
-$(G_RI3DC_OBJ): $(G_RI3DC_SRC) $(G_RI3DC_H)
-
-
-$(A_RI3DC): $(A_RI3DC_OBJ) $(LIBGC) 
-	$(LD) -o $@ $^ $(LDFLAGS)
-$(A_RI3DC_OBJ): $(A_RI3DC_SRC) $(A_RI3DC_H)
-
-
-$(A_GRIDCALC): $(A_GRIDCALC_OBJ) $(LIBGC) 
-	$(LD) -o $@ $^ $(LDFLAGS)
-$(A_GRIDCALC_OBJ): $(A_GRIDCALC_SRC) $(A_GRIDCALC_H)
-
-
-TAGS: $(ALL_SOURCES)
-	etags *.c *.h 
+TAGS: FORCE
+	find $(PROJECTDIR) -name '*.[ch]' | xargs etags
 	find $(GMX_SOURCE_DIR) -name '*.[ch]' | xargs etags --append 
-
-
-.PHONY: clean distclean tar-clean install dist rsync
-
-install:  $(G_RI3DC) $(A_RI3DC) $(A_GRIDCALC)
-	for p in $^; do \
-	    if [ -e $$p ]; then  \
-	       echo ">>> Installing file \`$$p' ..."; \
-	       $(INSTALL) -v -m 755 $$p $(BIN_DIR); \
-	    fi; \
-	done;
-
-
-clean:
-	-rm -f core *.o *.a *~ 
-
-distclean: clean tar-clean
-	-rm -f $(ALL_PROG) TAGS
 
 .cvsignore: 
 	echo $(ALL_PROG) > $@
@@ -196,11 +155,12 @@ dist: $(DIST_GRIDCOUNT)
 $(DIST_GRIDCOUNT): FORCE
 	-rm -rf $(DIST_DIR)
 	mkdir $(DIST_DIR) $(DIST_DIR)/examples
-	cp $(DIST_GRIDCOUNT_H) $(DIST_GRIDCOUNT_SRC) $(DIST_DIR)
-	cp $(DIST_GRIDCOUNT_DOCS) $(DIST_GRIDCOUNT_MAKE) $(DIST_DIR)
+	cp -r $(DIST_GRIDCOUNT_H) $(DIST_GRIDCOUNT_SRC) $(DIST_DIR)
+	cp -r $(DIST_GRIDCOUNT_DOCS) $(DIST_GRIDCOUNT_MAKE) $(DIST_DIR)
 	cp $(DIST_GRIDCOUNT_EXAMPLES) $(DIST_DIR)/examples
-	cp -r $(DIST_GRIDCOUNT_DIRS) $(DIST_DIR)
-	tar -zcvf $@ $(DIST_DIR)
+	tar --exclude='*~' --exclude='*.o' --exclude='*.a' \
+            --exclude=a_gridcalc --exclude=a_ri3Dc --exclude=g_ri3Dc \
+            -zcvf $@ $(DIST_DIR)
 	-rm -r $(DIST_DIR)
 
 tar-clean:

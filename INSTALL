@@ -49,6 +49,16 @@ the libmd and libgmx libraries.
       
        make install
 
+Example:
+
+You can also forego editing the top-level Makefile and set important
+paths on the command line. For instance, if you installed Gromacs in
+/opt/gromacs then you would (probably) say
+
+  make GMX_TOP_DIR=/opt/gromacs GMX_EXEC_PREFIX=/opt/gromacs
+  make BIN_DIR=/opt/gromacs/bin
+
+(For more detailed explanations see the top of the top-level Makefile.)
     
 
 Problems 

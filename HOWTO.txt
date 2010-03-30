@@ -1,0 +1,42 @@
+gridcount Howto
+===============
+
+Simple example: generate the water density and display in VMD
+-------------------------------------------------------------
+
+First you will need to have a trajectory that is centered on the
+protein (or whatever you are interested in; see the :doc:`FAQ` for
+details). E.g. ::
+
+   trjconv -s md.tpr -fit rot+trans -f md.xtc -o md_fit.xtc
+
+(Ideally, fit to a protein that is already centred in the box.)
+
+Make an index file for the water oxygen atoms::
+
+   printf  "keep 0\ndel 0\na OW\nq\n" | make_ndx -f md.tpr -o ow.ndx
+
+Generate the OW-density on 1 Å grid (=0.1 nm in Gromacs units!)::
+
+   g_rid3Dc -s md.tpr -f md_fit.xtc -delta 0.1 0.1 0.1 -grid water_density.dat
+
+Convert the density to a gOpenMol density file::
+
+   a_ri3Dc -unit molar -grid water_density.dat -plt plt_water_density.dat
+   mv plt_water_density.dat water_density.plt
+
+Notes:
+
+  * Using -unit molar produces a density (or concentration) in
+    mol/l; the concentration of bulk water is about 55 mol/l.
+
+  * Because of short comings in my Gromacs coding skills you will
+    have to manually rename the plt file so that it has the proper
+    suffix. 
+
+
+View structure and density in VMD:
+
+   vmd md.gro -m water_density.plt
+
+Use the Representation view to change the appearance of the density. 

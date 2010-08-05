@@ -1,6 +1,12 @@
 Changes and version history
 ===========================
 
+gmx4.0-1.2
+
+   - fixed a name clash between 'dprintf' in utilgmx.h and
+     /usr/include/stdio.h; apparently, this is defined on 
+     newer Linux systems (reported by Jayne Wallace)
+
 gmx4.0-1.1
 
    - rearranged directory structure (src/, scripts/ include/

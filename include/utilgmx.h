@@ -45,7 +45,7 @@ extern void grid3_free(real ***);
 extern void grid2_free(real **);
 extern void msg     (const char *format, ...);
 extern void dmsg    (const char *format, ...);
-extern void dprintf (const char *format, ...);
+extern void dbgprintf (const char *format, ...);
 extern void dfprintf (const char *format, ...);
 extern real ldist (const rvec x, const rvec p, const rvec c);
 extern real dt_tpx (char *fn);

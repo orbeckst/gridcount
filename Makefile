@@ -13,20 +13,25 @@
 #
 #  DEBUG        compile with debugging, -g and no optimisations
 
-# Set GMX_TOP_DIR to your Gromacs installation and check the
-# INCLUDE and LIB dir.
-GMX_TOP_DIR     := $(HOME)/Library/Gromacs/version/4.0.2
-
-# Set the directories where Gromacs executables and libraries are 
-# to be found. GMX_EXEC_PREFIX will probably depend on your OS;
-# use "$(ARCH)" if you have versions for different architectures installed:
-GMX_EXEC_PREFIX = $(GMX_TOP_DIR)/$(ARCH)
-GMX_LIB_DIR     = $(GMX_EXEC_PREFIX)/lib
+#====================================================================
+# 
+# THE FOLLOWING VARIABLES MUST BE CHECKED/SET BY THE USER
+# -------------------------------------------------------
+#
+# See the file INSTALL for instructions.
+#
 # Include directory for Gromacs header files:
-GMX_INCLUDE_DIR = $(GMX_TOP_DIR)/include/gromacs
+GMX_INCLUDE_DIR = /usr/local/gromacs/include/gromacs
 
-# install binaries into
-BIN_DIR = $(GMX_EXEC_PREFIX)/bin
+# Set the directories where Gromacs libraries are to be found:
+GMX_LIB_DIR     = /usr/local/gromacs/lib
+
+# Install binaries into:
+BIN_DIR = /usr/local/gromacs/bin
+#
+#
+#====================================================================
+
 
 # GMX_SOURCE_DIR is only necessary for the creation of etags and 
 # can be safely ignored (for compilation it is not important).
@@ -43,7 +48,7 @@ GMX_SOURCE_DIR  :=
 NAME     := gridcount#
 GMXBASE  := gmx4.0
 MAJOR    := 1#
-MINOR    := 2#
+MINOR    := 3#
 
 export PROJECTDIR := $(realpath .)
 export INCLUDEDIR := $(PROJECTDIR)/include
@@ -108,8 +113,6 @@ define usage
 \n  DEBUG        compile with debugging, -g and no optimisations\
 \n\
 \nImportant Makefile parameters:\
-\nGMX_TOP_DIR...............$(GMX_TOP_DIR)\
-\nGMX_EXEC_PREFIX...........$(GMX_EXEC_PREFIX)\
 \nGMX_LIB_DIR...............$(GMX_LIB_DIR)\
 \nGMX_INCLUDE_DIR...........$(GMX_INCLUDE_DIR)\
 \n\
@@ -123,7 +126,7 @@ define usage
 endef
 # 'emacs font-lock
 
-.PHONY: all install help clean dist-clean
+.PHONY: all install help clean dist-clean check
 all:
 	cd $(SRCDIR) && $(MAKE) $@
 
@@ -139,6 +142,33 @@ dist-clean: tar-clean
 
 help:
 	@echo -e "$(usage)"
+
+define include_check
+if test -e $(GMX_INCLUDE_DIR)/xtcio.h; then \
+    echo "OK   Gromacs include directory found: $(GMX_INCLUDE_DIR)"; \
+else \
+    echo "BAD  Gromacs include directory missing. Set GMX_INCLUDE_DIR in Makefile!"; \
+fi
+endef
+
+_LIBS = $(wildcard $(GMX_LIB_DIR)/libgmx.*)
+define lib_check
+libs=($(_LIBS)); \
+if test "$${#libs[@]}" -gt 0; then \
+    echo "OK   Gromacs lib directory found: $(GMX_LIB_DIR)"; \
+else \
+    echo "BAD  Gromacs lib directory missing. Set GMX_LIB_DIR in Makefile!"; \
+fi
+endef
+
+check:
+	@echo "============================================================"
+	@echo "Checking if GMX_INCLUDE_DIR and GMX_LIB_DIR are set properly"
+	@echo "============================================================"
+	@$(call include_check)
+	@$(call lib_check)
+	@echo "============================================================"
+	@echo "If you got any 'BAD' entries please read INSTALL."
 
 TAGS: FORCE
 	find $(PROJECTDIR) -name '*.[ch]' | xargs etags

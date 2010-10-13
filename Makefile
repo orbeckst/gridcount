@@ -197,7 +197,7 @@ tar-clean:
 	-rm -rf $(DIST_DIR) $(DIST_GRIDCOUNT)
 
 rsync: $(DIST_GRIDCOUNT)
-	rsync -avP $^ clathrin:/sansom/public_html/sbcb/oliver/download/Gromacs
+	rsync -avP $^ clathrin:/sansom/public_html/html/sbcb/oliver/download/Gromacs
 
 .phony: FORCE
 FORCE:

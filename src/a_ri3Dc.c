@@ -269,7 +269,12 @@ int main(int argc,char *argv[])
     "The density itself is in the lzdf.xvg file."
     "[PAR]For diagnostic purposes one can also plot the radial distributions of "
     "the unoccupied cells (holes in the grid) in order to find suitable grid "
-    "spacings.\n"
+    "spacings."
+    "[PAR]When you use this code in published work, please cite\n"
+    "     O. Beckstein and Mark S. P. Sansom, Liquid-vapor oscillations of\n"
+    "     water in hydrophobic nanopores, Proc. Natl. Acad. Sci. USA. 100\n"
+    "     (2003), 7063-7068. doi:10.1073/pnas.1136844100\n"
+    "Thanks."
     "[PAR]",
     "---------\n"
     "[1] Oliver Beckstein, http://sansom.biop.ox.ac.uk/oliver/software/#gridcount\n"

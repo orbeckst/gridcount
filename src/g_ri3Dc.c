@@ -198,12 +198,17 @@ int main(int argc,char *argv[])
     "[PAR]"
     "The output is the number density, averaged over the trajectory. "
     "Read this file "
-    "into a_ri3Dc, the grid analysis program, and produce radial distribution ",
+    "into a_ri3Dc, the grid analysis program, and produce radial distribution "
     "functions, density plots, pore profiles etc.\n"
-    "The grid data  is written as a binary file (but xdr format, readable ",
+    "The grid data  is written as a binary file (but xdr format, readable "
     "on any machine with the appropriate version of a_ri3Dc). a_ri3Dc has an option "
-    "to write it out as ascii text.\n" 
-    "[PAR]",
+    "to write it out as ascii text."
+    "[PAR]When you use this code in published work, please cite\n"
+    "     O. Beckstein and Mark S. P. Sansom, Liquid-vapor oscillations of\n"
+    "     water in hydrophobic nanopores, Proc. Natl. Acad. Sci. USA. 100\n"
+    "     (2003), 7063-7068. doi:10.1073/pnas.1136844100\n"
+    "Thanks."
+    "[PAR]"
     "Suggested use for water:\n",
     "create an index file for the water oxygens:\n",
     "  [TT]echo -e \"keep 0\\ndel 0\\na OW\\nq\\n\" ",

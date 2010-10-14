@@ -69,6 +69,13 @@ int main(int argc,char *argv[])
 {
   static char *desc[] = {
     "[TT]a_gridcalc[TT] combines  3D grids produced by [TT]g_ri3Dc[TT] [1]. "
+    "It is fairly limited; you can do much more in Python by using the "
+    "GridDataFormats library from http://github.com/orbeckst/GridDataFormats ."
+    "[PAR]When you use this code in published work, please cite\n"
+    "     O. Beckstein and Mark S. P. Sansom, Liquid-vapor oscillations of\n"
+    "     water in hydrophobic nanopores, Proc. Natl. Acad. Sci. USA. 100\n"
+    "     (2003), 7063-7068. doi:10.1073/pnas.1136844100\n",
+    "Thanks.\n",
     "[PAR]Known limitations:"
   };
 

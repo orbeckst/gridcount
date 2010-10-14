@@ -51,7 +51,7 @@ void density_write_plt (char *fnm, t_tgrid *tgrid, real unit)
   /* rank */
   i_write(fp,3);
 
-  /* Type of surface */
+  /* Type of surface -- use 42 for gridcount */
   i_write(fp,42);
 
   /* Zdim, Ydim, Xdim */

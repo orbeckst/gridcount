@@ -27,7 +27,6 @@ static char *SRCID_xdr_grid_h = "$Id$";
 #include "typedefs.h"
 #include "utilgmx.h"
 
-
 /* Version number of the file format is an integer, which is incremented 
    when changes are made. If the change breaks something then one has to add 
    specific tests on the format in version_check() and return INCOMPATIBLE 

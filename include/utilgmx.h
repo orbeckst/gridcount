@@ -1,6 +1,6 @@
 /* $Id$
 
-   Copyright (C) 2004 Oliver Beckstein <oliver@biop.ox.ac.uk>
+   Copyright (C) 2004-2010 Oliver Beckstein <oliver@biop.ox.ac.uk>
    This program is made available under the terms of the GNU Public License. 
    See the file LICENSE or http://www.gnu.org/copyleft/gpl.html
 */
@@ -19,10 +19,22 @@ static char *SRCID_utilgmx_h = "$Id$";
 #include "vec.h"
 #include "tpxio.h"
 
+/* use constants from physics.h in newer version of Gromacs */
+#ifdef M_PI
+#define PI M_PI
+#else
 #define PI 3.14159265358979323844
+#endif
+#ifndef AMU
 #define AMU 1.66054e-27                 /* 1u = AMU kg */
+#endif
+#ifdef AVOGADRO
+#define AvogadroConstant AVOGADRO
+#else
 #define AvogadroConstant 6.02214e+23    /* mol^-1 */
+#endif
 
+#ifndef aswap
 #define aswap(v,i,j) {  \
   atom_id temp;         \
                         \
@@ -30,6 +42,7 @@ static char *SRCID_utilgmx_h = "$Id$";
   v[i]=v[j];            \
   v[j]=temp;            \
 }
+#endif
 
 #ifndef MIN
 #define MIN(A, B) ((A) < (B) ? (A) : (B))
@@ -37,7 +50,9 @@ static char *SRCID_utilgmx_h = "$Id$";
 #ifndef MAX
 #define MAX(A, B) ((A) > (B) ? (A) : (B))
 #endif
+#ifndef NEWLINE
 #define NEWLINE(period, count) ((count)+1) % (period) ? "" : "\n"
+#endif
 
 extern real ***grid3_alloc(const int nx,const int ny,const int nz);
 extern real **grid2_alloc(const int nx,const int ny);

@@ -48,7 +48,7 @@ GMX_SOURCE_DIR  :=
 NAME     := gridcount#
 GMXBASE  := gmx4.0
 MAJOR    := 1#
-MINOR    := 3#
+MINOR    := 3a#
 
 export PROJECTDIR := $(realpath .)
 export INCLUDEDIR := $(PROJECTDIR)/include

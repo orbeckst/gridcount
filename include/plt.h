@@ -21,7 +21,7 @@ static char *SRCID_plt_h = "$Id$";
 
 #include "grid3D.h"
 
-extern void density_write_plt   (char *, t_tgrid *, real);
-extern void density_write_ascii (char *, t_tgrid *, real);
+extern void density_write_plt(const char *, t_tgrid *, real);
+extern void density_write_ascii(const char *, t_tgrid *, real);
 
 #endif /* _plt_h */

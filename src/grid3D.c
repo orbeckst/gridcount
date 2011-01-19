@@ -19,7 +19,7 @@
   in one chunk but I want to keep it general so we need some
   grid_serialiser
 */
-bool grid_write (FILE *fp,t_tgrid *tg,char *header) {
+gmx_bool grid_write (FILE *fp,t_tgrid *tg,char *header) {
   XDR         xdrs;
   t_XDRgrid   xg;
   
@@ -57,7 +57,7 @@ bool grid_write (FILE *fp,t_tgrid *tg,char *header) {
    (using the xdr_array) but this requires a rewrite for t_tgrid, too,
    so that it uses pointers instead of declared array[3] for delta,
    origin, and max */
-bool grid_read (FILE *fp,t_tgrid *tg,char *header) {
+gmx_bool grid_read (FILE *fp,t_tgrid *tg,char *header) {
   XDR         xdrs;
   t_XDRgrid   xg;
   int i;
@@ -122,7 +122,7 @@ gmx_inline double gridA (t_tgrid *tg) {
 }
 
 
-bool setup_tgrid (t_tgrid *g, t_cavity *cylinder, rvec Delta) {
+gmx_bool setup_tgrid (t_tgrid *g, t_cavity *cylinder, rvec Delta) {
   rvec c[8];     /* corners of the grid */
   real du;       /* difference between original a,b and after grid setup */
   int d;         /* coordinate dimensions XX, YY, ZZ */

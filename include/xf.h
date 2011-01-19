@@ -28,7 +28,7 @@ extern "C" {
 /***************************************************
  *            xfarbe routines (2D density plots)
  ***************************************************/
-extern bool xf_write_XFarbe (int);
+extern gmx_bool xf_write_XFarbe (int);
 /* write a parameter file with 16 colours from xfrabe_colours */
 extern FILE *xf_open (const char *,const char *,int,int);
 /* open file, write heading and dimensions X and Y; returns file

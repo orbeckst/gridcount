@@ -14,8 +14,8 @@
 char *eGridType_names[egtyNR+1] = {"regular","other"};
 char *version_ok_names[verokNR+1] = {"INCOMPATIBLE","OLDER","OK"};
 
-bool xdr_grid_v1 (XDR *xdrs, t_XDRgrid *xg);
-bool xdr_grid_v2 (XDR *xdrs, t_XDRgrid *xg);
+gmx_bool xdr_grid_v1 (XDR *xdrs, t_XDRgrid *xg);
+gmx_bool xdr_grid_v2 (XDR *xdrs, t_XDRgrid *xg);
 
 
 #ifdef DOUBLE
@@ -39,7 +39,7 @@ enum version_ok version_check (int version) {
   (Note: all xdr_* return 1 on success, 0 on error)
 */
 
-bool xdr_grid (XDR *xdrs, t_XDRgrid *xg) {
+gmx_bool xdr_grid (XDR *xdrs, t_XDRgrid *xg) {
   /* This is not working properly yet because the version check is
      actually happening while reading the file. For the time being,
      just run it with version = 2 for testing and figure out how to do
@@ -66,7 +66,7 @@ bool xdr_grid (XDR *xdrs, t_XDRgrid *xg) {
 }
 
 
-bool xdr_grid_v1 (XDR *xdrs, t_XDRgrid *xg) {
+gmx_bool xdr_grid_v1 (XDR *xdrs, t_XDRgrid *xg) {
   u_int ngrid;
   
   ngrid = xg->size[0] * xg->size[1] * xg->size[2];
@@ -86,7 +86,7 @@ bool xdr_grid_v1 (XDR *xdrs, t_XDRgrid *xg) {
 		      sizeof(real), (xdrproc_t)xdr_real) );
 } 
 
-bool xdr_grid_v2 (XDR *xdrs, t_XDRgrid *xg) {
+gmx_bool xdr_grid_v2 (XDR *xdrs, t_XDRgrid *xg) {
   u_int ngrid;
   
   ngrid = xg->size[0] * xg->size[1] * xg->size[2];

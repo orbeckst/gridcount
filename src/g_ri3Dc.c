@@ -113,7 +113,7 @@
 
 void init_t_result (t_result *, t_tgrid *, real **, real **, real **);
 static gmx_inline double gridcount (t_tgrid *, rvec, real);
-static real get_timestep(char *);
+static real get_timestep(const char *,const output_env_t);
 
 void init_t_result (t_result *res, t_tgrid *tgrid, real **profile, 
 		    real **xyproj, real **xzproj) {
@@ -151,22 +151,22 @@ static gmx_inline double gridcount (t_tgrid *g, rvec x, real dt) {
   return (double) dt;
 }
 
-/* from trjcat.c */
-static real get_timestep(char *fnm)
+/* from (old) trjcat.c */
+static real get_timestep(const char *fnm,const output_env_t oenv)
 {
   /* read first two frames in trajectory 'fnm' to determine timestep */
   
-  int        status;
+  t_trxstatus *status;
   real       t0, dt;
   t_trxframe fr;
-  bool ok;
+  gmx_bool ok;
   
-  ok=read_first_frame(&status,fnm,&fr,TRX_NEED_X);
+  ok=read_first_frame(oenv,&status,fnm,&fr,TRX_NEED_X);
   if(!ok || !fr.bTime)
     gmx_fatal(FARGS,"\nCouldn't read time from first frame.");
   t0=fr.time;
     
-  ok=read_next_frame(status,&fr);
+  ok=read_next_frame(oenv,status,&fr);
   if(!ok || !fr.bTime) 
     gmx_fatal(FARGS,"\nCouldn't read time from second frame.");
   dt=fr.time-t0;
@@ -179,7 +179,7 @@ static real get_timestep(char *fnm)
      
 int main(int argc,char *argv[])
 {
-  static char *desc[] = {
+  const char *desc[] = {
     "[TT]g_rid3Dc[TT] places a 3D grid into a simulation box and counts "
     "the number of molecules (typically water) in each cell over a trajectory. "
     "The rectangular grid is large enough to encompass a cylinder of given "
@@ -215,10 +215,12 @@ int main(int argc,char *argv[])
     "| make_ndx -f in.pdb -o ow.ndx[TT]\n",
     "and run [TT]g_ri3Dc[TT] on it."
     "[PAR]"
+    "See also: g_densmap, g_spatial, and g_rdf in Gromacs 4.5."
+    "[PAR]"
     "Caveats and known limitations:\n"
   };
 
-  static char *bugs[] = {
+  const char *bugs[] = {
     "Only works with cubic and orthorhombic unit cells.",
     "Calculates the density in a box that contains the "
     "cylinder oriented along (0,0,1), "
@@ -246,19 +248,19 @@ int main(int argc,char *argv[])
     "Even the developer mistypes the name frequently",
   };
 
-  static bool bdtWeight  = TRUE; /* weigh counts by the timestep */ 
-  static bool bMolecular = FALSE; /* default is to use molecules XXX TRUE broken/disabled    */
-  static t_cavity   cavity = {   /* define volume to count mols in */
+  gmx_bool bdtWeight  = TRUE; /* weigh counts by the timestep */ 
+  gmx_bool bMolecular = FALSE; /* default is to use molecules XXX TRUE broken/disabled    */
+  t_cavity   cavity = {   /* define volume to count mols in */
     {0, 0, 1},            /* axis -- cannot be changed */
     {0, 0, 0},            /* cpoint */
     0,                    /* radius */
     0, 0,                 /* z1 < z2 */
     0                     /* volume - calculate later */
   };
-  static rvec Delta = {0.05, 0.05, 0.05}; /* spatial resolution in nm */
-  static char buf[HEADER_MAX];        /* additional text for graphs */
-  static char *header = buf;          
-  static int  ngroups = 1;  /* not used >1 */
+  rvec Delta = {0.05, 0.05, 0.05}; /* spatial resolution in nm */
+  char buf[HEADER_MAX];        /* additional text for graphs */
+  char *header = buf;          
+  int  ngroups = 1;  /* not used >1 */
 
   t_pargs pa[] = {
     { "-m",      FALSE, etBOOL, {&bMolecular},
@@ -287,6 +289,7 @@ int main(int argc,char *argv[])
     { efNDX, NULL, NULL, ffOPTRD },
     { efDAT, "-grid",    "gridxdr", ffWRITE },
   };
+  output_env_t oenv;
 
   FILE       *fGrid;         /* 3D grid with occupancy numbers */
   t_tgrid    tgrid;          /* all information about the grid */
@@ -299,11 +302,11 @@ int main(int argc,char *argv[])
   matrix     box;            /* box matrix (3x3)           */
   real       t,tlast,dt;     /* time, time of last frame, time step  */
   int        natoms;         /* number of atoms in system  */
-  int        status;
+  t_trxstatus *status;
   int        i;              /* loopcounters                 */
 
   /* from gmx_traj.c -- loading of indices */
-  char       *indexfn;
+  const char       *indexfn;
   char       **grpname;
   int        *isize0 = NULL, *isize = NULL;
   atom_id    **index0 = NULL, **index = NULL;
@@ -322,7 +325,7 @@ int main(int argc,char *argv[])
   int        ePBC;
   char       title[STRLEN];
   rvec       *xtop;
-  bool       bTop;
+  gmx_bool   bTop;
 
 #define NFILE asize(fnm)
 #define NPA   asize(pa)
@@ -333,7 +336,8 @@ int main(int argc,char *argv[])
   CopyRight(stderr,argv[0]);
 
   parse_common_args(&argc,argv,PCA_CAN_TIME | PCA_CAN_VIEW,
-		    NFILE,fnm,asize(pa),pa,asize(desc),desc,asize(bugs),bugs);
+		    NFILE,fnm,asize(pa),pa,asize(desc),desc,asize(bugs),bugs,
+		    &oenv);
 
   if (bDebugMode()) {
     dfprintf ("%s -- debugging...\n\n", Program());
@@ -383,9 +387,9 @@ int main(int argc,char *argv[])
   mols = &(top.mols);
   atndx = mols->index;
 
-  dt=get_timestep(ftp2fn(efTRX,NFILE,fnm));
+  dt=get_timestep(ftp2fn(efTRX,NFILE,fnm),oenv);
 
-  natoms = read_first_x(&status,ftp2fn(efTRX,NFILE,fnm),&t,&x,box);
+  natoms = read_first_x(oenv,&status,ftp2fn(efTRX,NFILE,fnm),&t,&x,box);
   snew(x_s,natoms);
   tlast = t - dt;
 
@@ -421,7 +425,8 @@ int main(int argc,char *argv[])
       for(i=0; i<gnx; i++) 
 	sumP += gridcount(&tgrid, x[gindex[i]], weight);
     }
-  } while(read_next_x(status,&t,natoms,x,box));
+  } while(read_next_x(oenv,status,&t,natoms,x,box));
+  close_trj(status);
 
   /* normalisation (here: r = (x,y,z) <-> [ijk]
      NB: Integral_V dr f(r) = Sum_r dV f(r)
@@ -476,7 +481,6 @@ int main(int argc,char *argv[])
   free_tgrid(&tgrid);
 
   fprintf(stderr,"\n");
-  close_trj(status);
   fclose(fGrid);
   thanx(stdout);
 

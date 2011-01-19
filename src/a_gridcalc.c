@@ -67,7 +67,7 @@ void update_tgrid (t_tgrid *tg) {
     
 int main(int argc,char *argv[])
 {
-  static char *desc[] = {
+  const char *desc[] = {
     "[TT]a_gridcalc[TT] combines  3D grids produced by [TT]g_ri3Dc[TT] [1]. "
     "It is fairly limited; you can do much more in Python by using the "
     "GridDataFormats library from http://github.com/orbeckst/GridDataFormats ."
@@ -79,13 +79,13 @@ int main(int argc,char *argv[])
     "[PAR]Known limitations:"
   };
 
-  static char *bugs[] = {
+  const char *bugs[] = {
     "requires grid files with format >= 2 (including Tweight field)",
     "only does the average, no other operations implemented"
   };
 
-  static char buf[HEADER_MAX];           /* additional text for graphs */
-  static char *header = buf;
+  char buf[HEADER_MAX];           /* additional text for graphs */
+  char *header = buf;
 
 
 
@@ -98,6 +98,7 @@ int main(int argc,char *argv[])
     { efDAT, "-f", "gridxdr",      ffRDMULT },
     { efDAT, "-o", "gridout", ffWRITE },
   };
+  output_env_t oenv;
 
   int     nfile;          /* number of input files */
   char    **fnms;         /* filenames of input files */
@@ -119,7 +120,8 @@ int main(int argc,char *argv[])
   CopyRight(stderr,argv[0]);
 
   parse_common_args(&argc,argv, 0,
-		    NFILE,fnm,asize(pa),pa,asize(desc),desc,asize(bugs),bugs);
+		    NFILE,fnm,asize(pa),pa,asize(desc),desc,asize(bugs),bugs,
+		    &oenv);
 
   if (bDebugMode()) {
     dfprintf ("%s -- debugging...\n\n", Program());

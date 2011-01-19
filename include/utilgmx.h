@@ -63,7 +63,7 @@ extern void dmsg    (const char *format, ...);
 extern void dbgprintf (const char *format, ...);
 extern void dfprintf (const char *format, ...);
 extern real ldist (const rvec x, const rvec p, const rvec c);
-extern real dt_tpx (char *fn);
+extern real dt_tpx (const char *fn);
 extern int  list_add_atomid (const atom_id, int *, atom_id *);
 
 static gmx_inline void new_rvec (rvec r, real x, real y, real z)

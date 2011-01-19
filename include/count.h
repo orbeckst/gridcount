@@ -86,16 +86,13 @@ typedef struct {      /* times in the simulation */
 } t_simtime;
 
 
-extern bool autoset_cavity (t_cavity *,matrix,int,t_pargs []);
-extern bool bInCavity (const rvec x, const t_cavity *cavity);
-extern void x2molxcm (t_topology *top, int ePBC, atom_id *molndx, int gnmol, matrix box, 
-		      rvec *x, rvec *x_s, rvec *xmol_cm);
+extern gmx_bool autoset_cavity (t_cavity *,matrix,int,t_pargs []);
+extern gmx_bool bInCavity (const rvec x, const t_cavity *cavity);
 extern real npbc2com (t_topology *, atom_id *, matrix, rvec *, 
 		      atom_id, rvec);
 extern int mols_from_index (atom_id *index, int gnx, t_block *mols, 
 		     atom_id *molndx, int max_mol);
 extern void print_ldist (const rvec x, const t_cavity *cavity, const atom_id idx, const real mass);
 extern void fwrite_index (FILE *, atom_id *, int, t_topology *, char *);
-extern void dump_atomlist (FILE *, enum ndxtype, atom_id *, int, t_topology *);
 
 #endif   /* _count_h */

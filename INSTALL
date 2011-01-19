@@ -1,5 +1,5 @@
 Grid counter g_ri3Dc and analysis tools a_ri3Dc and a_gridcalc
-Copyright (C) 2004-2010 Oliver Beckstein <orbeckst@gmail.com>
+Copyright (C) 2004-2011 Oliver Beckstein <orbeckst@gmail.com>
 Released under the GNU Public License (see README)
 
 
@@ -12,7 +12,7 @@ for different versions of Gromacs.
 
 The gridcount  version that comes with this file is for stable
 
-    Gromacs 4.0.x
+    Gromacs 4.5.x
 
 releases.
 

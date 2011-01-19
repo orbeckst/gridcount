@@ -79,8 +79,8 @@
 
 void update_tgrid (t_tgrid *);
 void tgrid2cavity (t_tgrid *, t_cavity *);
-static gmx_inline bool bInCircle(real,real,real,real,real);
-static gmx_inline bool bInRing(real,real,real,real,real,real);
+static gmx_inline gmx_bool bInCircle(real,real,real,real,real);
+static gmx_inline gmx_bool bInRing(real,real,real,real,real,real);
 
 /* complete tgrid from data hold there */
 void update_tgrid (t_tgrid *tg) {
@@ -107,12 +107,12 @@ void tgrid2cavity (t_tgrid *tg, t_cavity *c) {
 }
 
 
-static gmx_inline bool bInCircle(real x,real y, real cx, real cy, real r) {
+static gmx_inline gmx_bool bInCircle(real x,real y, real cx, real cy, real r) {
   return (x-cx)*(x-cx) + (y-cy)*(y-cy) <= r*r;
 }
 
 /* unused */
-static gmx_inline bool bInRing(real x,real y, real cx, real cy, real r, real dr) {
+static gmx_inline gmx_bool bInRing(real x,real y, real cx, real cy, real r, real dr) {
   real u = (x-cx)*(x-cx) + (y-cy)*(y-cy); 
   return u >= r*r  &&  u < (r+dr)*(r+dr);
 }
@@ -130,8 +130,8 @@ real discrete_adjust (real x_old, real x_new, real delta) {
 }
 
 /* Change the grid according to user's radius, z1, z2 */
-bool readjust_tgrid(t_tgrid *tg,t_cavity *g,int npa,t_pargs pa[]) {
-  bool     bReadjusted = FALSE;
+gmx_bool readjust_tgrid(t_tgrid *tg,t_cavity *g,int npa,t_pargs pa[]) {
+  gmx_bool     bReadjusted = FALSE;
   real     dd, R_new;
   real     DeltaR = 0.5*(tg->Delta[XX]+tg->Delta[YY]); /* lacking elegance... */
   t_tgrid  old;
@@ -230,7 +230,7 @@ void force_fnopts (int nopts, char *opts[], int nfile, t_filenm fnm[]) {
     
 int main(int argc,char *argv[])
 {
-  static char *desc[] = {
+  const char *desc[] = {
     "[TT]a_rid3Dc[TT] analyses a 3D grid produced by [TT]g_ri3Dc[TT] [1]."
     "The 2D projections are written in a format suitable for the fast 2D density "
     "plotter xfarbe [2]. "
@@ -283,7 +283,7 @@ int main(int argc,char *argv[])
     "[PAR]Known limitations:"
   };
 
-  static char *bugs[] = {
+  const char *bugs[] = {
     "The radial bin width DeltaR is fixed to (Delta[XX]+Delta[YY])/2). "
     "In any case one should never have different bin widths in X and Y.",
     "There are still a few hidden options of questionable usefulness. "
@@ -292,33 +292,33 @@ int main(int argc,char *argv[])
     "note: -minocc also influences -lzdf"
   };
 
-  static t_cavity geometry = {   /* describes the cylinder */
+  t_cavity geometry = {   /* describes the cylinder */
     {0, 0, 1},            /* axis -- cannot be changed */
     {0, 0, 0},            /* cpoint -- set from grid */
     0,                    /* radius */
     0, 0,                 /* z1 < z2 */
     0                     /* volume - calculate later */
   };
-  static real min_occ = OCCUPIED_MIN;    /* count cell as occupied 
+  real min_occ = OCCUPIED_MIN;    /* count cell as occupied 
 					    if p > min_occ */
-  static bool bMirror = TRUE;            /* pretty picture of P(r,z) */
-  static bool bDoHoles = FALSE;          /* use instead of giving fns
+  gmx_bool bMirror = TRUE;            /* pretty picture of P(r,z) */
+  gmx_bool bDoHoles = FALSE;          /* use instead of giving fns
                                             explixitly */
-  static char *DensUnitStr[] = 
+  const char *DensUnitStr[] = 
     { NULL, "unity", "SPC", "molar", "Angstrom", "Voxel", NULL };
-  static rvec Delta = {0.02,0.02,0.02};  /* resolution in nm for
+  rvec Delta = {0.02,0.02,0.02};  /* resolution in nm for
                                             coarse graining */
-  static int  rad_ba_nr =   RAD_BA_NR;   /* block average of radial
+  int  rad_ba_nr =   RAD_BA_NR;   /* block average of radial
                                             bins */
-  static int  rad_ba_step = RAD_BA_STEP; 
-  static char buf[HEADER_MAX];           /* additional text for graphs */
-  static char *header = buf;
+  int  rad_ba_step = RAD_BA_STEP; 
+  char buf[HEADER_MAX];           /* additional text for graphs */
+  char *header = buf;
 
   /* maximum xfarbe level (in nm^-3) (this is motivated by the
    observation that densities for water in excess of 1.5 n_bulk rarely
    occur) */
-  static real maxDensity = 48.48405;
-  static real rsolvent=RWATER; /* radius of a solvent molecule or ion */
+  real maxDensity = 48.48405;
+  real rsolvent=RWATER; /* radius of a solvent molecule or ion */
 
 
   t_pargs pa[] = {
@@ -376,6 +376,7 @@ int main(int argc,char *argv[])
     { efDAT, "-dump", "gridasc",  ffOPTWR },
     { efDAT, "-plt",  "plt",  ffOPTWR },       /* gOpenMol density, see plt.c */
   };
+  output_env_t oenv;
 
   FILE       *fGrid;         /* 3D grid with occupation numbers */
   FILE       *fGrid2;        /* resampled */
@@ -426,7 +427,8 @@ int main(int argc,char *argv[])
   CopyRight(stderr,argv[0]);
 
   parse_common_args(&argc,argv, 0,
-		    NFILE,fnm,asize(pa),pa,asize(desc),desc,asize(bugs),bugs);
+		    NFILE,fnm,asize(pa),pa,asize(desc),desc,asize(bugs),bugs,
+		    &oenv);
 
   if (bDebugMode()) {
     dfprintf ("%s -- debugging...\n\n", Program());
@@ -469,7 +471,7 @@ int main(int argc,char *argv[])
 
   /* open input file  */
   msg("Reading grid 3D file...\n");
-  fGrid    = ffopen (opt2fn("-grid", NFILE, fnm), "r");
+  fGrid    = ffopen(opt2fn("-grid", NFILE, fnm), "r");
   if (!grid_read(fGrid,&tgrid,header)) 
     gmx_fatal(FARGS,"Error reading the 3D grid---no point in continuing!\n");
   update_tgrid(&tgrid);

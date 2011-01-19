@@ -25,7 +25,7 @@ static char *SRCID_xf_c = "$Id$";
 
 
 /* minimum parameter file; colours are defined in xf.h */
-bool xf_write_XFarbe (int ncolours) {
+gmx_bool xf_write_XFarbe (int ncolours) {
   FILE *XFarbe;
   int i;
   

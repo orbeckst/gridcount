@@ -194,14 +194,11 @@ real ldist (const rvec x, const rvec p, const rvec c) {
   return norm (d);
 };
 
-real dt_tpx (char *fn) {
-  int step, natoms;
-  real t, lambda;
+real dt_tpx (const char *fn) {
+  int natoms;
   t_inputrec  ir;  
-
   /* discard almost all info */
-  read_tpx(fn,&step,&t,&lambda, &ir, NULL, &natoms, NULL, NULL, NULL, NULL);
-
+  read_tpx(fn,&ir,NULL,&natoms,NULL,NULL,NULL,NULL);
   return ir.delta_t * ir.nstxtcout;
 };
 

@@ -80,13 +80,13 @@ typedef struct {
   real   **xzproj;       /* projection of the occupancy in the xz plane */
 } t_result;
 
-extern bool grid_write (FILE *,t_tgrid *,char *);
-extern bool grid_read  (FILE *,t_tgrid *,char *);
+extern gmx_bool grid_write (FILE *,t_tgrid *,char *);
+extern gmx_bool grid_read  (FILE *,t_tgrid *,char *);
 extern gmx_inline double DeltaV (t_tgrid *);
 extern gmx_inline double DeltaA (t_tgrid *);
 extern gmx_inline double gridV  (t_tgrid *);
 extern gmx_inline double gridA  (t_tgrid *);
-extern bool setup_tgrid (t_tgrid *, t_cavity *, rvec);
+extern gmx_bool setup_tgrid (t_tgrid *, t_cavity *, rvec);
 extern void setup_corners (rvec [], t_cavity *);
 extern void free_tgrid (t_tgrid *);
 

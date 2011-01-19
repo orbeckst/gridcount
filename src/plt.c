@@ -26,12 +26,12 @@
 
 static char *SRCID_plt_c = "$Id$";
 
-static void i_write(FILE *output, int value)
+void i_write(FILE *output, int value)
 {
   fwrite(&value,sizeof(int),1L,output);
 }
 
-static void f_write(FILE *output,float value)
+void f_write(FILE *output,float value)
 {
   fwrite(&value,sizeof(float),1L,output);
 }
@@ -39,7 +39,7 @@ static void f_write(FILE *output,float value)
 /* write plt binary density file for gOpenMol
    Normalise each grid point by dividing by unit.
 */
-void density_write_plt (char *fnm, t_tgrid *tgrid, real unit)
+void density_write_plt(const char *fnm, t_tgrid *tgrid, real unit)
 {
   FILE *fp;
   int  i,j,k;
@@ -77,7 +77,7 @@ void density_write_plt (char *fnm, t_tgrid *tgrid, real unit)
 };
 
 
-void density_write_ascii (char *fnm, t_tgrid *tgrid, real unit)
+void density_write_ascii(const char *fnm, t_tgrid *tgrid, real unit)
 {
   FILE *fp;
   int  i,j,k;

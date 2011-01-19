@@ -64,7 +64,7 @@ typedef struct {
 } t_XDRgrid;
 
 extern enum version_ok version_check(int);
-extern bool xdr_grid (XDR *, t_XDRgrid *);
+extern gmx_bool xdr_grid (XDR *, t_XDRgrid *);
 extern real *grid3_serialise(real ***,int *);
 extern real *grid2_serialise(real  **,int *);
 extern real ***grid3_unserialise(real *,int *);

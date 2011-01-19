@@ -46,9 +46,9 @@ GMX_SOURCE_DIR  :=
 #
 # New numbering scheme: NAME-GMXBASE-MAJOR.MINOR
 NAME     := gridcount#
-GMXBASE  := gmx4.0
+GMXBASE  := gmx4.5#
 MAJOR    := 1#
-MINOR    := 3a#
+MINOR    := 4#
 
 export PROJECTDIR := $(realpath .)
 export INCLUDEDIR := $(PROJECTDIR)/include

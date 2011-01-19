@@ -1,5 +1,5 @@
 Grid counter g_ri3Dc and analysis tools
-Copyright (C) 2003-2010 Oliver Beckstein <orbeckst@gmail.com>
+Copyright (C) 2003-2011 Oliver Beckstein <orbeckst@gmail.com>
 Published under the GNU General Public License version 2 (or higher)
 (see the file LICENCE)
 
@@ -76,10 +76,24 @@ Phys Biol 1 (2004), 43, http://stacks.iop.org/1478-3975/1/42 or
 http://arxiv.org/abs/q-bio/0402041. 
 
 
-The latest version of gridcount is available at 
+The latest released version of gridcount is available at 
 
    http://sbcb.bioch.ox.ac.uk/oliver/software/#gridcount
 
+The current source code (including development version) can be found
+at 
+
+   https://github.com/orbeckst/gridcount/
+
+Note that the various versions are maintained in different git
+branches. For instance, the version for Gromacs 4.5 is to be found in
+the `gromacs_4.5` branch, e.g.
+
+  https://github.com/orbeckst/gridcount/tree/gromacs_4.5
+
+You would get the source code with
+
+  git clone -b gromacs_4.5 https://github.com/orbeckst/gridcount.git
 
 A version history can be found in the file CHANGELOG.
 
@@ -120,6 +134,15 @@ BUGs and such
   need to be discarded.
 
 * Only works with rectangular boxes.
+
+
+See Also
+========
+
+* g_densmap, g_spatial and g_rdf in the standard Gromacs source
+  distribution
+* load density data into NumPy arrays and use the power of Python
+  (e.g. https://github.com/orbeckst/GridDataFormats )
 
 
 TODO

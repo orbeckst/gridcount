@@ -1,19 +1,14 @@
-Gridcount (from SBCBWiki, retrieved 2007-05-15)
+=================================
+ Gridcount Questions and Answers
+=================================
 
-Some quick notes on the gridcount tools, available from Oli's software
-page (http://sbcb.bioch.ox.ac.uk/oliver/software/#gridcount).
+Some quick notes on the gridcount tools, available from
+https://github.com/orbeckst/GridDataFormats
 
-Table of contents
-0 Overview 
-1 FAQ
-1.1 peptide
-1.2 non-orthorhombic boxes
-2 Examples
-2.1 Averages of umbrella-sampled densities
 
-------------------------------------------------------------
 
-0 Overview
+What are the tools doing?
+=========================
 
 g_ri3Dc 
 
@@ -29,13 +24,66 @@ a_ri3Dc
 a_gridcalc
 
     manipulate a collection of densities; at the moment the only
-    function is averaging them. (Note: this requires the latest
-    version (in the rel-3-2-1-umbrella branch with grid file format 2)
+    function is averaging them. A more flexible way to work with
+    densities is to handle them in Python using GridDataFormats,
+    available from https://github.com/orbeckst/GridDataFormats
 
 
 
-1 FAQ
-1.1 peptide
+Questions and Answers ("FAQ")
+=============================
+
+Installation
+------------
+
+See also INSTALL.
+
+* compilation fails with 
+
+   gcc -g -O2 -fomit-frame-pointer -finline-functions -funroll-loops -Wall -Wno-unused  -I/usr/local/gromacs/include  -c -o g_ri3Dc.o g_ri3Dc.c
+   g_ri3Dc.c:101:22: error: statutil.h: No such file or directory
+   g_ri3Dc.c:102:22: error: sysstuff.h: No such file or directory
+   ...
+
+  This means that you did not edit the Makefile (steps 1.1 and 1.2 in INSTALL).
+  Go back and do it. Try `make check'; it should only report 'ok'.
+
+
+* If compilation fails and error messages mention 'fatal.h' then you
+  are compiling against the wrong version of Gromacs. Please see the
+  top of this file for the compatible versions.
+
+* Compiling/linking fails with messages such as
+
+     libgmx.a(vmddlopen.o): In function `vmddlopen': vmddlopen.c:(.text+0x43): undefined reference to `dlopen'
+     ...
+     collect2: ld returned 1 exit status
+
+  This indicates that you also have to link against the dynamic loader
+  library, libdl. In the Makefile, add `-ldl' to LDFLAGS so that it
+  looks like
+
+     LDFLAGS  +=  -lm -L$(GMX_LIB_DIR) -lmd -lgmx -ldl
+
+* Compiling/linking fails with messages such as 
+
+     libgmx.a(pthreads.o): In function `tMPI_Thread_key_delete': pthreads.c:(.text+0x64d): undefined reference to `pthread_key_delete'
+     ...
+     collect2: ld returned 1 exit status
+
+  This indicates that you also have to link against the parallel
+  threads library, libpthread. In the Makefile, add `-lpthread' to
+  LDFLAGS so that it looks like
+
+     LDFLAGS  +=  -lm -L$(GMX_LIB_DIR) -lmd -lgmx -lpthread
+
+
+
+Running gridcount
+-----------------
+
+peptide
+~~~~~~~
 
 Q:  I am contacting you with a question regarding the rendering in 3D
     of the densities obtained with your program gridcount. In
@@ -79,9 +127,9 @@ trjconv. From memory: Start with your output from md, call it md.xtc
 
       put all molecules back in the box
 
-Then run
+Then run ::
 
-g_ri3Dc -f grid.xtc ...
+  g_ri3Dc -f grid.xtc ...
 
 At least around the protein you should see proper density, eg water at
 bulk density. At the edges the density will be lower because your box
@@ -97,7 +145,8 @@ In order to debug gridcounting issues you need to remeber that
 As such, changes in box size, movement of the solute etc all affect the density.
 
 
-1.2 non-orthorhombic boxes
+non-orthorhombic boxes
+~~~~~~~~~~~~~~~~~~~~~~
 
 Q:   I am trying to use your gridcount utilities for analysing Gromacs
      3.3. trajectories but I didn't succeed yet :-(.
@@ -192,8 +241,11 @@ For protein densities, eg the backbone, you need an index file with
 the backbone atoms and -nom.
 
 
-2 Examples
-2.1 Averages of umbrella-sampled densities
+Examples
+========
+
+Averages of umbrella-sampled densities
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If you were smart enough to safe trajectories for each umbrella window
 you can analyse the density:
@@ -207,35 +259,35 @@ you can analyse the density:
 For Oli's standard umbrella setup these tasks are automated in
 examples/window_density.pl.
 
-Glueing it all together:
+Glueing it all together::
 
-------------------------------------------------------------
-#!/bin/bash
 
-SPECIES=NA  # NA CL SOL
-DELTA=0.05
+   #!/bin/bash
 
-#source /packages/opt/gromacs/3.2.1/x86_64-unknown-linux-gnu/bin/GMXRC
-source /users/oliver/Gromacs/3.2.1-umbrella/x86_64-unknown-linux-gnu/bin/GMXRC
+   SPECIES=NA  # NA CL SOL
+   DELTA=0.05
 
-find . -name '*.tpr' | sed "/no_confinement/d" > tpr.list
+   #source /packages/opt/gromacs/3.2.1/x86_64-unknown-linux-gnu/bin/GMXRC
+   source /users/oliver/Gromacs/3.2.1-umbrella/x86_64-unknown-linux-gnu/bin/GMXRC
 
-for t in $(cat tpr.list); do
-  echo "[$t]"
-  nice -n 15 ~/Gromacs/Scripts/window_density.pl $t $SPECIES $DELTA
-done
+   find . -name '*.tpr' | sed "/no_confinement/d" > tpr.list
 
-XDR=${SPECIES}xdr.dat
-AVG=avg${SPECIES}.dat
-find . -name ${XDR} | sed "/no_confinement/d" > xdr.list
+   for t in $(cat tpr.list); do
+     echo "[$t]"
+     nice -n 15 ~/Gromacs/Scripts/window_density.pl $t $SPECIES $DELTA
+   done
 
-echo "Created "$(wc --lines xdr.list)" grid files ${XDR}."
-echo "Average ${AVG}..."
+   XDR=${SPECIES}xdr.dat
+   AVG=avg${SPECIES}.dat
+   find . -name ${XDR} | sed "/no_confinement/d" > xdr.list
 
-xargs a_gridcalc -o ${AVG} -f < xdr.list
+   echo "Created "$(wc --lines xdr.list)" grid files ${XDR}."
+   echo "Average ${AVG}..."
 
-a_ri3Dc -grid ${AVG} -unit molar -xfarbe-maxlevel 4.5
-------------------------------------------------------------
+   xargs a_gridcalc -o ${AVG} -f < xdr.list
+
+   a_ri3Dc -grid ${AVG} -unit molar -xfarbe-maxlevel 4.5
+
 
 
 Note: In order to average densities one has to weight them. The weight

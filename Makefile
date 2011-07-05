@@ -153,8 +153,7 @@ endef
 
 _LIBS = $(wildcard $(GMX_LIB_DIR)/libgmx.*)
 define lib_check
-libs=($(_LIBS)); \
-if test "$${#libs[@]}" -gt 0; then \
+if test -n "$(_LIBS)"; then \
     echo "OK   Gromacs lib directory found: $(GMX_LIB_DIR)"; \
 else \
     echo "BAD  Gromacs lib directory missing. Set GMX_LIB_DIR in Makefile!"; \

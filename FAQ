@@ -48,7 +48,6 @@ See also INSTALL.
   This means that you did not edit the Makefile (steps 1.1 and 1.2 in INSTALL).
   Go back and do it. Try `make check'; it should only report 'ok'.
 
-
 * If compilation fails and error messages mention 'fatal.h' then you
   are compiling against the wrong version of Gromacs. Please see the
   top of this file for the compatible versions.
@@ -77,6 +76,46 @@ See also INSTALL.
 
      LDFLAGS  +=  -lm -L$(GMX_LIB_DIR) -lmd -lgmx -lpthread
 
+* xdr system header files not found
+  - If compiling standalone make sure that your compiler can find the
+    xdr header files which do exist on most systems (if you managed to
+    compile gromacs in any case). /usr/include/rpc seems a standard
+    location.
+
+    However, if you managed to compile gromacs then I suggest you
+    compile gridcount simply as contributed software as described
+    above and everything should sort out itself.
+
+  - Campbell Millar <c.millar@elec.gla.ac.uk> reports that on Apple,
+    Solaris and SGI some typedefs were missing. If you seem to have
+    this problem try patching xdr_grid.h by issuing
+
+    patch < INSTALL
+
+#------------------------[xdr_grid.h.diff]--------------------------------------
+
+--- xdr_grid.h  2004-03-23 15:58:43.000000000 +0000
++++ xdr_grid.h_SOLARIS  2004-03-23 16:08:04.000000000 +0000
+@@ -20,4 +20,5 @@
+
+ #include <stdio.h>
++#include <sys/types.h>
+ #include <rpc/xdr.h>
+ #include "fatal.h"
+@@ -27,4 +28,11 @@
+ #include "utilgmx.h"
+
++/* Campbell Millar <c.millar@elec.gla.ac.uk>: Apparently,  on apple, SGI and Solaris
++   the following types are not defined (though in Linux they come with <rpc/types.h>,
++   included from <rpc/xdr.h>)
++*/
++typedef bool_t int;
++typedef enum_t int;
++
+ /* Version number of the file format is an integer, which is incremented
+    when changes are made. If the change breaks something then one has to add
+
+#------------------------[xdr_grid.h.diff]--------------------------------------
 
 
 Running gridcount

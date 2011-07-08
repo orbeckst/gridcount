@@ -76,6 +76,20 @@ See also INSTALL.
 
      LDFLAGS  +=  -lm -L$(GMX_LIB_DIR) -lmd -lgmx -lpthread
 
+* Compiling fails and the first error message is something like
+
+     g_ri3Dc.c:112:23: gridcount.h: No such file or directory
+
+  Check if the previous line contains something like
+
+     gcc .... -Iinclude ....
+
+  It should really contain something like
+  '-I/home/username/path/to/gridcount/src' and this is a sign that you
+  have (a) a version of GNU Make prior to 3.81 and (b) gridcount prior
+  to gmx4.5-1.5 (which fixes this bug). Solution: Get the latest
+  version of gridcount.
+
 * xdr system header files not found
   - If compiling standalone make sure that your compiler can find the
     xdr header files which do exist on most systems (if you managed to

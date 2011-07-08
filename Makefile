@@ -21,10 +21,11 @@
 # See the file INSTALL for instructions.
 #
 # Include directory for Gromacs header files:
-GMX_INCLUDE_DIR = /usr/local/gromacs/include/gromacs
+#GMX_INCLUDE_DIR = /usr/local/gromacs/include/gromacs
+GMX_INCLUDE_DIR = /opt/gromacs/4.5.3/include/gromacs
 
 # Set the directories where Gromacs libraries are to be found:
-GMX_LIB_DIR     = /usr/local/gromacs/lib
+GMX_LIB_DIR     = /opt/gromacs/4.5.3/lib
 
 # Install binaries into:
 BIN_DIR = /usr/local/gromacs/bin
@@ -48,9 +49,13 @@ GMX_SOURCE_DIR  :=
 NAME     := gridcount#
 GMXBASE  := gmx4.5#
 MAJOR    := 1#
-MINOR    := 4#
+MINOR    := 5#
 
-export PROJECTDIR := $(realpath .)
+# The macro below is expanded when 'realpath' is not built-in.
+# Built-in 'realpath' is available on GNU Make 3.81.
+realpath = $(shell cd $(1); $(PWD))
+
+export PROJECTDIR := $(call realpath, .)
 export INCLUDEDIR := $(PROJECTDIR)/include
 export SRCDIR     := $(PROJECTDIR)/src
 export SCRIPTSDIR := $(PROJECTDIR)/scripts

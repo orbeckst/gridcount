@@ -3,6 +3,19 @@ Copyright (C) 2003-2011 Oliver Beckstein <orbeckst@gmail.com>
 Published under the GNU General Public License version 2 (or higher)
 (see the file LICENCE)
 
+-------------------------------------------------------------------
+UNSUPPORTED AND DEPRECATED
+
+Development and support for this tool has been discontinued.
+If you have questions/bugs please put them in the issue tracker
+https://github.com/orbeckst/gridcount/issues to keep a record.
+
+If you are fixing bugs please send PULL REQUESTS.
+
+For more modern/universal approaches to accomplishing similar
+analysis look at https://www.mdanalysis.org and there are now
+also some Gromacs tools that do similar things.
+--------------------------------------------------------------------
 
 
 Short introduction

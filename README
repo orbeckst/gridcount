@@ -128,7 +128,19 @@ gOpenMol  http://www.csc.fi/gopenmol/
 BUGs and such
 =============
 
-* Feel free to send feedback to Oliver Beckstein <orbeckst@gmail.com>
+Note: bugs will only be fixed if someone submits a Pull Request.
+
+-------------------------------------------------------------------
+UNSUPPORTED AND DEPRECATED
+
+Development and support for this tool has been discontinued.
+If you have questions/bugs please put them in the issue tracker
+https://github.com/orbeckst/gridcount/issues to keep a record.
+
+If you are fixing bugs please send PULL REQUESTS.
+-------------------------------------------------------------------
+
+* See https://github.com/orbeckst/gridcount/issues for known bugs.
 
 * Problems during compilation/installation: see INSTALL
 
@@ -152,23 +164,18 @@ BUGs and such
 See Also
 ========
 
+* MDAnalysis Volumetric Analysis: 
+  https://www.mdanalysis.org/docs/documentation_pages/analysis_modules.html#volumetric-analysis
 * g_densmap, g_spatial and g_rdf in the standard Gromacs source
   distribution
 * load density data into NumPy arrays and use the power of Python
   (e.g. https://github.com/orbeckst/GridDataFormats )
 
 
-TODO
-====
+Missing features
+================
 
-* Resampling of the grid (ie coarse graining) should be possible in
-  a_ri3Dc but it isn't (yet).
-
-* There should be a way of switching on all (hidden) plots of empty
-  cells (`holes') with one option instead of specifying all hole
-  options separately.
-
-* Probably more code cleanup.
+(Note: features will only be added if someone submits a Pull Request.)
 
 * The native density format should be something like OpenDX because
   then it would be more interoperable and easier to manipulate with
